@@ -1,0 +1,44 @@
+{
+  "color": [
+    {
+      "name": "primary",
+      "value": "#42A5F5"
+    },
+    {
+      "name": "container",
+      "value": "#111111"
+    },
+    {
+      "name": "on_container",
+      "value": "#D5D5D5"
+    },
+    {
+      "name": "on_container_secondary",
+      "value": "#6C6C6C"
+    },
+    {
+      "name": "background",
+      "value": "#181818"
+    },
+    {
+      "name": "on_background",
+      "value": "#D1D1D1"
+    },
+    {
+      "name": "background_secondary",
+      "value": "#323232"
+    },
+    {
+      "name": "highlights",
+      "value": "#576B95"
+    },
+    {
+      "name": "icon",
+      "value": "#D5D5D5"
+    },
+    {
+      "name": "card",
+      "value": "#3F4759"
+    }
+  ]
+}

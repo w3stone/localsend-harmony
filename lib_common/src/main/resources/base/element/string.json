@@ -1,0 +1,44 @@
+{
+  "string": [
+    {
+      "name": "page_show",
+      "value": "page from package"
+    },
+    {
+      "name": "receive",
+      "value": "接收"
+    },
+    {
+      "name": "send",
+      "value": "发送"
+    },
+    {
+      "name": "setting",
+      "value": "设置"
+    },
+    {
+      "name": "select",
+      "value": "选择"
+    },
+    {
+      "name": "file",
+      "value": "文件"
+    },
+    {
+      "name": "folder",
+      "value": "文件夹"
+    },
+    {
+      "name": "text",
+      "value": "文本"
+    },
+    {
+      "name": "clipboard",
+      "value": "剪切板"
+    },
+    {
+      "name": "nearby_devices",
+      "value": "附近的设备"
+    }
+  ]
+}

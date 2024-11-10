@@ -5,6 +5,9 @@
   "main": "",
   "author": "",
   "license": "",
-  "dependencies": {}
+  "dependencies": {
+    "common": "file:../lib_common",
+    "@ohos/polka": "^1.0.0-rc.3"
+  }
 }
 
