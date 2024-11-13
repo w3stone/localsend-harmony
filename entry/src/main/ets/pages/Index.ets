@@ -1,11 +1,22 @@
 import { MainPage } from './main';
 import window from '@ohos.window';
+import { ReceivingPage } from './ReceivingPage';
+import { Routers } from '../utils';
 
 @Entry
 @Component
 struct Index {
   @StorageLink("DARK_MODE") @Watch("setStatusBar") isDark: boolean = false
   @Provide('pages') pages: NavPathStack = new NavPathStack()
+
+  @Builder
+  PageParams(name: string) {
+    if (name == Routers.RECEIVING_PAGE) {
+      ReceivingPage()
+    } else if (name == Routers.INDEX) {
+      Index()
+    }
+  }
 
   build() {
     Navigation(this.pages) {
@@ -15,10 +26,15 @@ struct Index {
     .size({ width: '100%', height: '100%' })
     .hideToolBar(true)
     .backgroundColor($r('app.color.background'))
+    .navDestination(this.PageParams)
   }
 
   aboutToAppear(): void {
     this.setStatusBar()
+  }
+
+  onBackPress(): boolean | void {
+    this.pages.pop()
   }
 
   private setStatusBar() {
@@ -26,7 +42,6 @@ struct Index {
     if (windowStage != undefined) {
       let mainWin: window.Window = windowStage.getMainWindowSync();
       let props: window.SystemBarProperties = {
-        // statusBarColor: (this.theme == ThemeType.DARK) ? "#111111" : "#D1D1D1",
         statusBarContentColor: this.isDark ? "#D1D1D1" : "#171717",
       };
       mainWin.setWindowSystemBarProperties(props);

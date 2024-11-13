@@ -1,0 +1,7 @@
+export class ReplyErrorModel {
+  message: string = ''
+
+  constructor(message: string) {
+    this.message = message
+  }
+}

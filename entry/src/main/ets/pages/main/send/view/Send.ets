@@ -1,123 +1,119 @@
-import { IpAddress, logger, Screens, SizeConstant, toast } from 'common';
-import { Icon, LoopImage } from '../../../../components';
+import { IpAddress, logger, SizeConstant, toast } from 'common';
+import { Icon, LoopImage, NavigationTitle } from '../../../../components';
 import wifiManager from '@ohos.wifiManager';
-import { JSON } from '@kit.ArkTS';
 import { DeviceModel } from '../../../../model/DeviceModel';
-import { LocalSend } from '../../../../utils/LocalSend';
+import { DeviceProvider } from '../../../../utils/DeviceProvider';
+import { EventType, EventBus } from '../../../../eventbus';
+import { DeviceIcon } from '../../../../components/DeviceIcon';
 
 @Component
 export struct Send {
   @State ip: string = ''
-  @StorageProp(LocalSend.REGISTERED_DEVICE_LIST_KEY) allDevice: DeviceModel[] = []
+  @StorageLink(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) allDevice: DeviceModel[] = []
 
   build() {
-    Column() {
-      Text($r('app.string.select'))
-        .fontSize(SizeConstant.TEXT_XXL)
-        .fontColor($r('app.color.on_container'))
-        .margin({ top: SizeConstant.SPACE_XL })
-      Blank().height(SizeConstant.SPACE_M)
-      Row() {
-        IconButton({
-          text: $r('app.string.file'), icon: $r('app.media.ic_file'), click: () => {
-            toast.show("发送文件")
-          }
-        })
-        Blank().width(SizeConstant.SPACE_M)
-        IconButton({
-          text: $r('app.string.folder'), icon: $r('app.media.ic_folder_filled'), click: () => {
-            toast.show("发送文件")
-          }
-        })
-        Blank().width(SizeConstant.SPACE_M)
-        IconButton({
-          text: $r('app.string.text'), icon: $r('app.media.ic_text_filled'), click: () => {
-            toast.show("发送文件")
-          }
-        })
-        Blank().width(SizeConstant.SPACE_M)
-        IconButton({
-          text: $r('app.string.clipboard'), icon: $r('app.media.ic_clipboard'), click: () => {
-            toast.show("发送文件")
-          }
-        })
-      }
-      .width('100%')
-
-      Row() {
-        Text($r('app.string.nearby_devices'))
-          .fontSize(SizeConstant.TEXT_XXL)
-          .fontColor($r('app.color.on_container'))
-        Blank().width(SizeConstant.SPACE_L)
-        Icon({
-          src: $r('app.media.ic_rotate'),
-          spacing: SizeConstant.SPACE_EXTRA_S,
-          click: () => {
-            toast.show("查找设备")
-
-          }
-        })
-        Blank().width(SizeConstant.SPACE_L)
-        Icon({
-          src: $r('app.media.ic_quickstart'),
-          spacing: SizeConstant.SPACE_EXTRA_S,
-          click: () => {
-            toast.show("手动发送")
-          }
-        })
-        Blank().width(SizeConstant.SPACE_L)
-        Icon({
-          src: $r('app.media.ic_favor'), spacing: SizeConstant.SPACE_EXTRA_S,
-          click: () => {
-            toast.show("收藏夹")
-          }
-        })
-        Blank().width(SizeConstant.SPACE_L)
-        Icon({
-          src: $r('app.media.ic_settings'), spacing: SizeConstant.SPACE_EXTRA_S,
-          click: () => {
-            toast.show("发送模式")
-          }
-        })
-      }
-      .margin({ top: SizeConstant.SPACE_XL })
-
-      Text(this.ip)
-        .fontSize(SizeConstant.TEXT_XL)
-        .fontColor($r('app.color.on_container'))
-
-      Text(`设备数量: ${this.allDevice.length}`)
-        .fontSize(SizeConstant.TEXT_XL)
-        .fontColor($r('app.color.on_container'))
-
-      //设备列表
-      if (this.allDevice.length > 0) {
-        List() {
-          ForEach(
-            this.allDevice,
-            (item: DeviceModel) => {
-              ListItem() {
-                DeviceItem({ device: item })
-              }
-            },
-            (item: DeviceModel, index: number) => `${item.key}_${index}`
-          )
+    NavigationTitle({ title: $r('app.string.select') }) {
+      Column() {
+        Row() {
+          IconButton({
+            text: $r('app.string.file'), icon: $r('app.media.ic_file'), click: () => {
+              toast.show("发送文件")
+            }
+          })
+          Blank().width(SizeConstant.SPACE_M)
+          IconButton({
+            text: $r('app.string.folder'), icon: $r('app.media.ic_folder_filled'), click: () => {
+              toast.show("发送文件")
+            }
+          })
+          Blank().width(SizeConstant.SPACE_M)
+          IconButton({
+            text: $r('app.string.text'), icon: $r('app.media.ic_text_filled'), click: () => {
+              toast.show("发送文件")
+            }
+          })
+          Blank().width(SizeConstant.SPACE_M)
+          IconButton({
+            text: $r('app.string.clipboard'), icon: $r('app.media.ic_clipboard'), click: () => {
+              toast.show("发送文件")
+            }
+          })
         }
-        .listDirection(Axis.Vertical)
         .width('100%')
-        .layoutWeight(1)
-      } else {
-        DeviceItem()
+
+        Row() {
+          Text($r('app.string.nearby_devices'))
+            .fontSize(SizeConstant.TEXT_XXL)
+            .fontColor($r('app.color.on_container'))
+          Blank().width(SizeConstant.SPACE_L)
+          Icon({
+            src: $r('app.media.ic_rotate'),
+            spacing: SizeConstant.SPACE_EXTRA_S,
+            click: () => {
+              toast.show("查找设备")
+              EventBus.getInstance().post(EventType.SCAN_DEVICE)
+            }
+          })
+          Blank().width(SizeConstant.SPACE_L)
+          Icon({
+            src: $r('app.media.ic_quickstart'),
+            spacing: SizeConstant.SPACE_EXTRA_S,
+            click: () => {
+              toast.show("手动发送")
+            }
+          })
+          Blank().width(SizeConstant.SPACE_L)
+          Icon({
+            src: $r('app.media.ic_favor'), spacing: SizeConstant.SPACE_EXTRA_S,
+            click: () => {
+              toast.show("收藏夹")
+            }
+          })
+          Blank().width(SizeConstant.SPACE_L)
+          Icon({
+            src: $r('app.media.ic_settings'), spacing: SizeConstant.SPACE_EXTRA_S,
+            click: () => {
+              toast.show("发送模式")
+            }
+          })
+        }
+        .margin({ top: SizeConstant.SPACE_XL })
+
+        Text(this.ip)
+          .fontSize(SizeConstant.TEXT_XL)
+          .fontColor($r('app.color.on_container'))
+
+        Text(`设备数量: ${this.allDevice.length}`)
+          .fontSize(SizeConstant.TEXT_XL)
+          .fontColor($r('app.color.on_container'))
+
+        //设备列表
+        if (this.allDevice.length > 0) {
+          List() {
+            ForEach(
+              this.allDevice,
+              (item: DeviceModel) => {
+                ListItem() {
+                  DeviceItem({ device: item })
+                }
+              },
+              (item: DeviceModel, index: number) => `${item.key}_${index}`
+            )
+          }
+          .listDirection(Axis.Vertical)
+          .width('100%')
+          .layoutWeight(1)
+        } else {
+          DeviceItem()
+        }
       }
+      .alignItems(HorizontalAlign.Start)
+      .size({ width: '100%', height: '100%' })
+      .padding({
+        right: SizeConstant.SPACE_L,
+        left: SizeConstant.SPACE_L
+      })
     }
-    .alignItems(HorizontalAlign.Start)
-    .size({ width: '100%', height: '100%' })
-    .padding({
-      top: Screens.getStatusBarHeight(),
-      right: SizeConstant.SPACE_L,
-      left: SizeConstant.SPACE_L
-    })
-    .backgroundColor($r('app.color.container'))
   }
 
   aboutToAppear(): void {
@@ -163,7 +159,7 @@ struct DeviceItem {
   build() {
     Row() {
       if (this.device) {
-        Icon({ src: this.getIcon(this.device.deviceType), wh: 60 })
+        DeviceIcon({ deviceType: this.device.deviceType })
       } else {
         LoopImage({
           images: [
@@ -206,23 +202,5 @@ struct DeviceItem {
     .padding(SizeConstant.SPACE_L)
     .borderRadius(SizeConstant.RADIUS_L)
     .backgroundColor($r('app.color.background'))
-  }
-
-  //mobile | desktop | web | headless | server
-  getIcon(deviceType: string): Resource {
-    switch (deviceType) {
-      case 'mobile':
-        return $r('app.media.ic_mobile')
-      case 'desktop':
-        return $r('app.media.ic_computer')
-      case 'server':
-        return $r('app.media.ic_cli')
-      case 'headless':
-        return $r('app.media.ic_storage')
-      case 'web':
-        return $r('app.media.ic_web')
-      default:
-        return $r('app.media.ic_storage')
-    }
   }
 }

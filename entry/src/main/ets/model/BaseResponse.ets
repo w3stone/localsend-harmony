@@ -1,2 +1,3 @@
+@Sendable
 export class BaseResponse {
 }

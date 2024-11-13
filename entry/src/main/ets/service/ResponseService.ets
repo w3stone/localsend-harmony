@@ -1,6 +1,6 @@
 import { MulticastModel } from '../model';
 import { HttpRequest } from '../http';
-import { LocalSend } from '../utils';
+import { DeviceProvider } from '../utils';
 import { ApiConstant } from '../constant/ApiConstant';
 import { logger } from 'common';
 import { JSON } from '@kit.ArkTS';
@@ -21,7 +21,7 @@ export class ResponseService {
     HttpRequest.post(url, model)
       .then(resolve => {
         logger.info(TAG, '--->>> 当前设备信息已发送 response: ' + JSON.stringify(resolve))
-        LocalSend.addOrReplaceDevice(hostname, resolve as DeviceModel)
+        DeviceProvider.addOrReplaceDevice(hostname, resolve as DeviceModel)
       }, (reason: Error) => {
         logger.info(TAG, '--->>> 发送当前设备信息失败: ' + JSON.stringify(reason) + " url: " + url)
       })

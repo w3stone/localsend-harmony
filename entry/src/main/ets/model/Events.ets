@@ -1,0 +1,3 @@
+@Sendable
+export class ScanEvent {
+}

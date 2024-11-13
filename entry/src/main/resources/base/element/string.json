@@ -13,8 +13,80 @@
       "value": "LocalSend"
     },
     {
+      "name": "receive",
+      "value": "接收"
+    },
+    {
+      "name": "send",
+      "value": "发送"
+    },
+    {
+      "name": "setting",
+      "value": "设置"
+    },
+    {
+      "name": "select",
+      "value": "选择"
+    },
+    {
+      "name": "file",
+      "value": "文件"
+    },
+    {
+      "name": "folder",
+      "value": "文件夹"
+    },
+    {
+      "name": "text",
+      "value": "文本"
+    },
+    {
+      "name": "clipboard",
+      "value": "剪切板"
+    },
+    {
+      "name": "nearby_devices",
+      "value": "附近的设备"
+    },
+    {
       "name": "alias_combination",
       "value": "%s的%s"
+    },
+    {
+      "name": "send_file_request_text",
+      "value": "想要发送给你 %d 个文件"
+    },
+    {
+      "name": "reject",
+      "value": "拒绝"
+    },
+    {
+      "name": "accept",
+      "value": "接受"
+    },
+    {
+      "name": "receiving_files",
+      "value": "正在接收文件"
+    },
+    {
+      "name": "save_directory",
+      "value": "保存目录"
+    },
+    {
+      "name": "total_progress",
+      "value": "总进度(%s)"
+    },
+    {
+      "name": "advanced",
+      "value": "高级"
+    },
+    {
+      "name": "cancel",
+      "value": "取消"
+    },
+    {
+      "name": "queue",
+      "value": "队列"
     }
   ]
 }

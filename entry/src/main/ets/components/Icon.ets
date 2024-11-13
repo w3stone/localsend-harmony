@@ -3,19 +3,31 @@ import { SizeConstant } from 'common'
 @Component
 export struct Icon {
   @Prop src: Resource
+  @Prop iconColor?: ResourceColor | null = $r('app.color.icon')
   @Prop spacing: Length = 0
-  @Prop wh: Length = SizeConstant.ICON_XL
+  @Prop dimension: Length = SizeConstant.ICON_XL
   click?: () => void
 
   build() {
-    Image(this.src)
-      .padding(this.spacing)
-      .size({ width: this.wh, height: this.wh })
-      .fillColor($r('app.color.icon'))
-      .onClick(() => {
-        if (this.click) {
-          this.click()
-        }
-      })
+    if (this.iconColor) {
+      Image(this.src)
+        .padding(this.spacing)
+        .size({ width: this.dimension, height: this.dimension })
+        .fillColor(this.iconColor)
+        .onClick(() => {
+          if (this.click) {
+            this.click()
+          }
+        })
+    } else {
+      Image(this.src)
+        .padding(this.spacing)
+        .size({ width: this.dimension, height: this.dimension })
+        .onClick(() => {
+          if (this.click) {
+            this.click()
+          }
+        })
+    }
   }
 }

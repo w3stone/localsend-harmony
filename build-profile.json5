@@ -53,6 +53,10 @@
     {
       "name": "lib_common",
       "srcPath": "./lib_common",
+    },
+    {
+      "name": "serve",
+      "srcPath": "./sub_modules/serve",
     }
   ]
 }

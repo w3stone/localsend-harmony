@@ -1,14 +1,69 @@
 import { Screens, SizeConstant } from 'common';
+import { EventBus, EventType, ReceiveResultActionEvent } from '../../../eventbus';
+import { PrepareUploadModel, ReceiveResultAction, ReceiveResultActionType } from '../../../model';
 
 import { Receive } from '../receive';
 import { Send } from '../send';
 import { Setting } from '../setting';
+import { emitter } from '@kit.BasicServicesKit';
+import { ReceiveRequestDialog } from '../../../components';
+import { FileProvider, Routers } from '../../../utils';
 
 @Component
 export struct MainPage {
   @StorageLink("DARK_MODE") isDark: boolean = false
+  @Consume('pages') pages: NavPathStack;
   @State currentTabIndex: number = 0
   private controller: TabsController = new TabsController()
+  @State mSendFileRequestData: PrepareUploadModel | null = null
+  mSendFileRequestDialog: CustomDialogController | null = new CustomDialogController({
+    width: '100%',
+    height: '60%',
+    cornerRadius: {
+      bottomLeft: 0,
+      bottomRight: 0
+    },
+    offset: {
+      dx: 0,
+      //向下偏移显示在导航条下层
+      dy: Screens.getNavigationBarHeight()
+    },
+    autoCancel: false,
+    alignment: DialogAlignment.Bottom,
+    openAnimation: {
+      duration: 300,
+      curve: Curve.Friction,
+      playMode: PlayMode.Alternate,
+    },
+    closeAnimation: {
+      duration: 300,
+      curve: Curve.Friction,
+      playMode: PlayMode.Alternate,
+    },
+    builder: ReceiveRequestDialog({
+      data: this.mSendFileRequestData,
+      onRejectClick: (dialog: CustomDialogController) => {
+        EventBus.getInstance().post(
+          EventType.RECEIVE_SEND_REQUEST_ACTION,
+          ReceiveResultActionEvent({ action: ReceiveResultActionType.REJECT } as ReceiveResultAction)
+        )
+        dialog.close()
+        this.mSendFileRequestData = null
+      },
+      onAcceptClick: (dialog: CustomDialogController) => {
+        EventBus.getInstance().post(
+          EventType.RECEIVE_SEND_REQUEST_ACTION,
+          ReceiveResultActionEvent({ action: ReceiveResultActionType.ACCEPT } as ReceiveResultAction)
+        )
+        dialog.close()
+        this.pages.pushPathByName(Routers.RECEIVING_PAGE, this.mSendFileRequestData?.files)
+        this.mSendFileRequestData = null
+      }
+    }),
+    onWillDismiss: () => {
+      //阻止交互式关闭弹窗
+    }
+  })
 
   @Builder
   tabBar(text: Resource, icon: Resource, index: number) {
@@ -53,5 +108,29 @@ export struct MainPage {
     .onChange((index) => {
       this.currentTabIndex = index
     })
+  }
+
+  aboutToAppear(): void {
+    //收到一个文件发送请求
+    EventBus.getInstance().on(EventType.RECEIVE_SEND_REQUEST, (eventData: emitter.EventData) => {
+      this.mSendFileRequestData = eventData.data as PrepareUploadModel
+      if (this.mSendFileRequestData && this.mSendFileRequestDialog) {
+        this.mSendFileRequestDialog.open()
+        //设置正在处理文件发送请求，屏蔽掉其他文件发送请求
+        FileProvider.setReceivingFiles(true)
+        return
+      }
+      //回复处理错误
+      EventBus.getInstance().post(
+        EventType.RECEIVE_SEND_REQUEST_ACTION,
+        ReceiveResultActionEvent({ action: ReceiveResultActionType.ERROR } as ReceiveResultAction)
+      )
+    })
+  }
+
+  aboutToDisappear(): void {
+    this.mSendFileRequestData = null
+    this.mSendFileRequestDialog = null
+    EventBus.getInstance().unregister(EventType.RECEIVE_SEND_REQUEST)
   }
 }
