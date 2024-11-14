@@ -1,6 +1,6 @@
 import { Screens, SizeConstant } from 'common';
 import { EventBus, EventType, ReceiveResultActionEvent } from '../../../eventbus';
-import { PrepareUploadModel, ReceiveResultAction, ReceiveResultActionType } from '../../../model';
+import { PrepareUploadModel, ReceiveResultAction, ReceiveResultActionType, AutoSaveModel } from '../../../model';
 
 import { Receive } from '../receive';
 import { Send } from '../send';
@@ -8,10 +8,12 @@ import { Setting } from '../setting';
 import { emitter } from '@kit.BasicServicesKit';
 import { ReceiveRequestDialog } from '../../../components';
 import { FileProvider, Routers } from '../../../utils';
+import { Keys } from '../../../constant';
 
 @Component
 export struct MainPage {
   @StorageLink("DARK_MODE") isDark: boolean = false
+  @StorageProp(Keys.AUTO_SAVE_MODEL) autoSaveModel: AutoSaveModel = AutoSaveModel.CLOSE
   @Consume('pages') pages: NavPathStack;
   @State currentTabIndex: number = 0
   private controller: TabsController = new TabsController()
@@ -51,13 +53,8 @@ export struct MainPage {
         this.mSendFileRequestData = null
       },
       onAcceptClick: (dialog: CustomDialogController) => {
-        EventBus.getInstance().post(
-          EventType.RECEIVE_SEND_REQUEST_ACTION,
-          ReceiveResultActionEvent({ action: ReceiveResultActionType.ACCEPT } as ReceiveResultAction)
-        )
         dialog.close()
-        this.pages.pushPathByName(Routers.RECEIVING_PAGE, this.mSendFileRequestData?.files)
-        this.mSendFileRequestData = null
+        this.toReceivingPage()
       }
     }),
     onWillDismiss: () => {
@@ -114,11 +111,20 @@ export struct MainPage {
     //收到一个文件发送请求
     EventBus.getInstance().on(EventType.RECEIVE_SEND_REQUEST, (eventData: emitter.EventData) => {
       this.mSendFileRequestData = eventData.data as PrepareUploadModel
-      if (this.mSendFileRequestData && this.mSendFileRequestDialog) {
-        this.mSendFileRequestDialog.open()
+      if (this.mSendFileRequestData) {
         //设置正在处理文件发送请求，屏蔽掉其他文件发送请求
         FileProvider.setReceivingFiles(true)
-        return
+        if (this.autoSaveModel == AutoSaveModel.FAVORITES) {
+          //todo 检查发送请求的设备是否在收藏夹
+          this.toReceivingPage()
+        } else if (this.autoSaveModel == AutoSaveModel.ALL) {
+          this.toReceivingPage()
+        } else {
+          if (this.mSendFileRequestData && this.mSendFileRequestDialog) {
+            this.mSendFileRequestDialog.open()
+            return
+          }
+        }
       }
       //回复处理错误
       EventBus.getInstance().post(
@@ -132,5 +138,14 @@ export struct MainPage {
     this.mSendFileRequestData = null
     this.mSendFileRequestDialog = null
     EventBus.getInstance().unregister(EventType.RECEIVE_SEND_REQUEST)
+  }
+
+  toReceivingPage() {
+    EventBus.getInstance().post(
+      EventType.RECEIVE_SEND_REQUEST_ACTION,
+      ReceiveResultActionEvent({ action: ReceiveResultActionType.ACCEPT } as ReceiveResultAction)
+    )
+    this.pages.pushPathByName(Routers.RECEIVING_PAGE, this.mSendFileRequestData?.files)
+    this.mSendFileRequestData = null
   }
 }

@@ -7,7 +7,7 @@ export struct ObserveVisibleLayout {
   doNothingBuilder() {
   }
 
-  @BuilderParam content: () => void = this.doNothingBuilder
+  @BuilderParam content: VoidCallback = this.doNothingBuilder
   onVisibleChanged?: (isVisible: boolean) => void
 
   build() {

@@ -130,7 +130,7 @@ export struct Send {
 struct IconButton {
   @Prop text: string | Resource
   @Prop icon: Resource
-  click?: () => void
+  click?: VoidCallback
 
   build() {
     Column() {

@@ -1,4 +1,5 @@
-import { Screens, SizeConstant } from 'common';
+import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
+import { Screens, SizeConstant, toast } from 'common';
 import { Icon, IconButton, NavigationTitle } from '../components';
 import { FileInfoModel, ReceiveStatus } from '../model';
 import { FileProvider, Routers } from '../utils';
@@ -14,7 +15,7 @@ export struct ReceivingPage {
     NavDestination() {
       NavigationTitle({ title: $r('app.string.receiving_files') }) {
         RelativeContainer() {
-          Text($r('app.string.save_directory'))
+          Text($r('app.string.save_directory', FileProvider.getDefaultFileDir(getContext(this))))
             .width('100%')
             .fontColor($r('app.color.on_background'))
             .fontSize(SizeConstant.TEXT_XL)
@@ -65,7 +66,7 @@ export struct ReceivingPage {
               //高级 - 取消
               Row() {
                 IconButton({
-                  icon: $r('app.media.ic_more'),
+                  icon: $r('app.media.ic_detail'),
                   text: $r('app.string.advanced'),
                   iconColor: $r('app.color.on_container'),
                   iconSize: SizeConstant.ICON_L,
@@ -78,6 +79,8 @@ export struct ReceivingPage {
                   iconColor: $r('app.color.on_container'),
                   iconSize: SizeConstant.ICON_L,
                   arrangement: FlexDirection.Row
+                }).onClick(() => {
+                  this.showCancelDialog()
                 })
               }
               .width('100%')
@@ -85,7 +88,8 @@ export struct ReceivingPage {
             }
             .margin({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
             .padding(SizeConstant.SPACE_L)
-            .backgroundColor($r('app.color.background'))
+            // .backgroundColor($r('app.color.background'))
+            .backgroundBlurStyle(BlurStyle.BACKGROUND_THIN, {})
             .borderRadius(SizeConstant.RADIUS_L)
           }
           .alignRules({
@@ -101,7 +105,14 @@ export struct ReceivingPage {
         .backgroundColor($r('app.color.container'))
       }
     }
+    .height('100%')
+    .width('100%')
     .hideTitleBar(true)
+    .onBackPressed(() => {
+      toast.show("拦截掉！")
+      this.showCancelDialog()
+      return true
+    })
   }
 
   aboutToAppear(): void {
@@ -109,11 +120,14 @@ export struct ReceivingPage {
     this.status.total = 100
     this.status.progress = 56
 
-    const params: object = this.pages.getParamByName(Routers.RECEIVING_PAGE)
-    if (params) {
-      for (const element of Object.keys(params[0])) {
-        const value: FileInfoModel = params[0][element]
-        this.status.files.push(value)
+    const params: Array<object> = this.pages.getParamByName(Routers.RECEIVING_PAGE) as Array<object>
+    if (params && params.length != 0) {
+      try {
+        for (const element of Object.keys(params[0])) {
+          const value: FileInfoModel = params[0][element]
+          this.status.files.push(value)
+        }
+      } catch (e) {
       }
     }
   }
@@ -122,16 +136,36 @@ export struct ReceivingPage {
     FileProvider.setReceivingFiles(false)
   }
 
-  onBackPress(): boolean {
-    console.log(`onBackPressIntercept =>>>>>`)
-    return true
-  }
-
   getTotalProcessText(): string {
     if (!this.status.progress) {
       return '-'
     }
     return `${(this.status.progress / this.status.total * 100).toFixed(2)}%`
+  }
+
+  showCancelDialog() {
+    DialogHelper.showAlertDialog({
+      title: $r('app.string.cancel_file_transfer_title'),
+      content: $r('app.string.cancel_file_transfer_tips'),
+      autoCancel: false,
+      backCancel: false,
+      alignment: DialogAlignment.Bottom,
+      offset: {
+        dx: 0,
+        dy: -Screens.getNavigationBarHeight()
+      },
+      primaryButton: {
+        value: $r('app.string.cancel'),
+        fontColor: $r('app.color.on_container_secondary'),
+      },
+      secondaryButton: $r('app.string.positive'),
+      onAction: (action) => {
+        if (action == DialogAction.TWO) {
+          // todo 发送一个中断上传消息给WebService
+          this.pages.pop()
+        }
+      }
+    })
   }
 }
 

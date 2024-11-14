@@ -2,12 +2,13 @@ import resmgr from '@ohos.resourceManager';
 import { formatString, getRandomNextNumber } from 'common';
 import { DeviceModel } from '../model/DeviceModel';
 import { util } from '@kit.ArkTS';
+import { Keys } from '../constant';
 
 export class DeviceProvider {
   static REGISTERED_DEVICE_LIST_KEY = "REGISTERED_DEVICE_LIST_KEY"
 
   static getDeviceFingerprint(): string {
-    return AppStorage.get('fingerprint') || util.generateRandomUUID()
+    return AppStorage.get(Keys.FINGERPRINT) || util.generateRandomUUID()
   }
 
   static getRandomAlias(resource: resmgr.ResourceManager): string {
@@ -57,5 +58,4 @@ export class DeviceProvider {
   static getAllDevice(): Array<DeviceModel> {
     return AppStorage.get(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) || []
   }
-
 }

@@ -2,6 +2,8 @@ import { MainPage } from './main';
 import window from '@ohos.window';
 import { ReceivingPage } from './ReceivingPage';
 import { Routers } from '../utils';
+import { ThemeControl } from '@kit.ArkUI';
+import { DefaultThemes } from '../theme/DefaultColors';
 
 @Entry
 @Component
@@ -31,6 +33,7 @@ struct Index {
 
   aboutToAppear(): void {
     this.setStatusBar()
+    this.initTheme()
   }
 
   onBackPress(): boolean | void {
@@ -46,5 +49,9 @@ struct Index {
       };
       mainWin.setWindowSystemBarProperties(props);
     }
+  }
+
+  private initTheme() {
+    ThemeControl.setDefaultTheme(new DefaultThemes())
   }
 }

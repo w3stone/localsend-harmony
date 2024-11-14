@@ -2,22 +2,18 @@ import { logger, Screens } from 'common';
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { window } from '@kit.ArkUI';
 import { Configuration } from '@ohos.app.ability.Configuration';
+import { DialogProvider } from '../utils/DialogProvider';
 
 export default class EntryAbility extends UIAbility {
-  onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
-    window.getLastWindow(this.context, async (_, win) => {
+  onCreate(_want: Want, _launchParam: AbilityConstant.LaunchParam): void {
+    window.getLastWindow(this.context, async (_, _win) => {
       //系统是否是深色模式
       let mode = this.context.config.colorMode
       AppStorage.setOrCreate("SYSTEM_COLOR_MODE", mode)
       let isDark: boolean = (mode == ConfigurationConstant.ColorMode.COLOR_MODE_DARK)
       AppStorage.setOrCreate("DARK_MODE", isDark)
-      //
-      // win.setWindowLayoutFullScreen(true)
-      // let area = win.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
-      // logger.error("EntryAbility", "getWindowAvoidArea")
-      // AppStorage.setOrCreate("STATUS_BAR_HEIGHT", area.topRect.height)
-      // logger.error("EntryAbility", "setOrCreate")
-      // ScreenUtils.init(area)
+
+      DialogProvider.init(this.context)
       logger.error("EntryAbility", "init")
     })
   }

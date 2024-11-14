@@ -70,4 +70,8 @@ export class FileProvider {
   static isReceivingFiles(): boolean {
     return AppStorage.get(Keys.CURRENTLY_RECEIVING_STATUS) || false
   }
+
+  static getDefaultFileDir(context: Context): string {
+    return context.filesDir
+  }
 }

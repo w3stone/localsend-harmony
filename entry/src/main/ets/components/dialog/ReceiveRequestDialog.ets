@@ -93,7 +93,8 @@ export struct ReceiveRequestDialog {
     }
     .width('100%')
     .padding({ bottom: Screens.getNavigationBarHeight() })
-    .backgroundColor($r('app.color.background'))
+    // .backgroundColor($r('app.color.background'))
+    .backgroundBlurStyle(BlurStyle.BACKGROUND_THIN)
   }
 
   getFilesCount(): number {

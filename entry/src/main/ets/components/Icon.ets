@@ -6,7 +6,7 @@ export struct Icon {
   @Prop iconColor?: ResourceColor | null = $r('app.color.icon')
   @Prop spacing: Length = 0
   @Prop dimension: Length = SizeConstant.ICON_XL
-  click?: () => void
+  click?: VoidCallback
 
   build() {
     if (this.iconColor) {
