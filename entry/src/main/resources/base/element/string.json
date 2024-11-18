@@ -49,6 +49,34 @@
       "value": "附近的设备"
     },
     {
+      "name": "number_of_files",
+      "value": "文件: %d"
+    },
+    {
+      "name": "size_of_files",
+      "value": "大小: %s"
+    },
+    {
+      "name": "edit",
+      "value": "编辑"
+    },
+    {
+      "name": "append",
+      "value": "添加"
+    },
+    {
+      "name": "enter_message",
+      "value": "输入消息"
+    },
+    {
+      "name": "unselected_file",
+      "value": "未选择文件"
+    },
+    {
+      "name": "unselected_file_text",
+      "value": "请至少选择一个文件"
+    },
+    {
       "name": "alias_combination",
       "value": "%s的%s"
     },
@@ -65,8 +93,48 @@
       "value": "接受"
     },
     {
+      "name": "received_a_message",
+      "value": "发送给你了一条消息:"
+    },
+    {
+      "name": "copy",
+      "value": "复制"
+    },
+    {
+      "name": "close",
+      "value": "关闭"
+    },
+    {
+      "name": "copy_succeed",
+      "value": "复制成功"
+    },
+    {
+      "name": "waiting_response",
+      "value": "等待响应中..."
+    },
+    {
+      "name": "otherside_refused_the_request",
+      "value": "对方拒绝了请求"
+    },
+    {
+      "name": "otherside_processing_other_requests",
+      "value": "对方正在处理其他请求"
+    },
+    {
+      "name": "too_many_requests",
+      "value": "请求过多"
+    },
+    {
+      "name": "error",
+      "value": "错误"
+    },
+    {
       "name": "receiving_files",
       "value": "正在接收文件"
+    },
+    {
+      "name": "sending_files",
+      "value": "正在发送文件"
     },
     {
       "name": "save_directory",
@@ -85,8 +153,28 @@
       "value": "取消"
     },
     {
+      "name": "complete",
+      "value": "完成"
+    },
+    {
       "name": "queue",
       "value": "队列"
+    },
+    {
+      "name": "transferring",
+      "value": "传输中"
+    },
+    {
+      "name": "incorrect",
+      "value": "出错"
+    },
+    {
+      "name": "skiped",
+      "value": "已跳过"
+    },
+    {
+      "name": "completed",
+      "value": "完成"
     },
     {
       "name": "cancel_file_transfer_title",
@@ -135,6 +223,10 @@
     {
       "name": "positive",
       "value": "确定"
+    },
+    {
+      "name": "read_pasteboard_reason",
+      "value": "用于向其他设备发送您剪切板中复制的内容"
     }
   ]
 }

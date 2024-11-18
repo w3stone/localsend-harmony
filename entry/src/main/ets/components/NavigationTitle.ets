@@ -32,13 +32,13 @@ export struct NavigationTitle {
           src: item.icon,
           iconColor: $r('app.color.on_container'),
           spacing: 2,
-          click: () => {
+        })
+          .margin({ right: SizeConstant.SPACE_L })
+          .onClick(() => {
             if (this.onMenuClick) {
               this.onMenuClick(item)
             }
-          }
-        })
-          .margin({ right: SizeConstant.SPACE_L })
+          })
       })
     }
     .width('100%')

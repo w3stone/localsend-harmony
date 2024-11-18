@@ -1,8 +1,9 @@
 import resmgr from '@ohos.resourceManager';
-import { formatString, getRandomNextNumber } from 'common';
+import { Strings, getRandomNextNumber } from 'common';
 import { DeviceModel } from '../model/DeviceModel';
 import { util } from '@kit.ArkTS';
-import { Keys } from '../constant';
+import { Keys, NetAddress } from '../constant';
+import { MulticastModel } from '../model';
 
 export class DeviceProvider {
   static REGISTERED_DEVICE_LIST_KEY = "REGISTERED_DEVICE_LIST_KEY"
@@ -19,7 +20,7 @@ export class DeviceProvider {
     let fruit = fruits[getRandomNextNumber(0, fruits.length)]
 
     let alias = resource.getStringSync($r('app.string.alias_combination'))
-    return formatString(alias, adjective, fruit)
+    return Strings.formatString(alias, adjective, fruit)
   }
 
   static addOrReplaceDevice(hostname: string, device: DeviceModel) {
@@ -45,9 +46,7 @@ export class DeviceProvider {
     const key = `device_${hostname}`
     const allDevice: DeviceModel[] | undefined = AppStorage.get(DeviceProvider.REGISTERED_DEVICE_LIST_KEY)
     if (allDevice) {
-      const findIndex = allDevice.findIndex((value: DeviceModel, index: number) => {
-        value.key === key ? index : -1
-      })
+      const findIndex = allDevice.findIndex((value: DeviceModel) => value.key === key)
       if (findIndex > -1) {
         return allDevice[findIndex]
       }
@@ -57,5 +56,9 @@ export class DeviceProvider {
 
   static getAllDevice(): Array<DeviceModel> {
     return AppStorage.get(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) || []
+  }
+
+  static getCurrentDevice(): DeviceModel {
+    return new MulticastModel(AppStorage.get(Keys.ALIAS)!!, NetAddress.port!!)
   }
 }

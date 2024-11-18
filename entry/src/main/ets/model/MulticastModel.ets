@@ -3,7 +3,7 @@ import { DeviceProvider } from '../utils'
 
 @Sendable
 export class MulticastModel extends DeviceModel {
-  constructor(alias: string, port: number, announce: boolean = true) {
+  constructor(alias: string, port: number, announce: boolean | undefined = undefined) {
     super()
     super.alias = alias
     super.version = '2.1'

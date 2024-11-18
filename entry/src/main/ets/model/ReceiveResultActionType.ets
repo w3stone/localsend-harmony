@@ -2,5 +2,6 @@
 export enum ReceiveResultActionType {
   ACCEPT, //准备接收
   REJECT, //拒绝
+  COMPLETE, //已接收，当发送的是单个文本时 直接接收
   ERROR //出错
 }

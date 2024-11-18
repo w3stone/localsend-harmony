@@ -1,6 +1,6 @@
 import { MainPage } from './main';
 import window from '@ohos.window';
-import { ReceivingPage } from './ReceivingPage';
+import { TransferPage } from './transfer/TransferPage';
 import { Routers } from '../utils';
 import { ThemeControl } from '@kit.ArkUI';
 import { DefaultThemes } from '../theme/DefaultColors';
@@ -13,8 +13,8 @@ struct Index {
 
   @Builder
   PageParams(name: string) {
-    if (name == Routers.RECEIVING_PAGE) {
-      ReceivingPage()
+    if (name == Routers.TRANSFER_PAGE) {
+      TransferPage()
     } else if (name == Routers.INDEX) {
       Index()
     }

@@ -10,6 +10,9 @@
     },{
       "name": "error",
       "value": "#F04533"
+    },{
+      "name": "warn",
+      "value": "#FF9B0A"
     },
     {
       "name": "container",

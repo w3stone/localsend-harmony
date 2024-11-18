@@ -2,7 +2,7 @@
   "modelVersion": "5.0.0",
   "description": "Please describe the basic information.",
   "dependencies": {
-    "@pura/harmony-dialog": "^1.0.6"
+
   },
   "devDependencies": {
     "@ohos/hypium": "1.0.19",

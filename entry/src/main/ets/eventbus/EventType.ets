@@ -12,4 +12,8 @@ export class EventType {
    * 已同意其他设备发送文件，准备接收
    */
   static RECEIVING_FILE_ACTION = 4
+  /**
+   * 文件传输进度更新事件
+   */
+  static TRANSFER_PROGRESS_CHANGED_ACTION = 5
 }

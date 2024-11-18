@@ -1,5 +1,5 @@
 import { emitter } from '@kit.BasicServicesKit'
-import { PrepareUploadModel, ReceiveResultAction } from '../model'
+import { PrepareUploadModel, ReceiveResultAction, TransferProgressChangedAction } from '../model'
 
 @Sendable
 export class ValueEventData<T> {
@@ -39,6 +39,17 @@ export function PrepareUploadEvent(value: PrepareUploadModel): emitter.EventData
  * @returns
  */
 export function ReceiveResultActionEvent(value: ReceiveResultAction): emitter.EventData {
+  return {
+    data: value
+  }
+}
+
+/**
+ * 文件传输进度更新
+ * @param value
+ * @returns
+ */
+export function TransferFileProgressEvent(value: TransferProgressChangedAction): emitter.EventData {
   return {
     data: value
   }

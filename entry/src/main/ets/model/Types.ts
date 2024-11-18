@@ -5,14 +5,24 @@ export interface FileInfoModel {
   fileType: string
   sha256?: string
   preview?: string
-  metadata: FileMetadata
+  metadata?: FileMetadata
+  filePath?: string | undefined //仅发送时有值
+  status?: number
 }
 
 export interface FileMetadata {
-  modified: string
-  accessed: string
+  modified: string | undefined
+  accessed: string | undefined
 }
 
 export interface FileInfoKeyMap {
   [key: string]: FileInfoModel;
+}
+
+export interface StringPair {
+  [key: string]: string
+}
+
+export interface StringNumberPair {
+  [key: string]: number
 }

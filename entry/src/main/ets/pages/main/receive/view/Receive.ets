@@ -18,7 +18,6 @@ export struct Receive {
   @StorageLink("DARK_MODE") isDark: boolean = false
   @StorageProp(Keys.ALIAS) alias: string = ""
   @StorageLink(Keys.AUTO_SAVE_MODEL) autoSaveModel: AutoSaveModel = AutoSaveModel.CLOSE
-  @Consume('pages') pages: NavPathStack;
 
   build() {
     NavigationTitle({
@@ -115,11 +114,6 @@ export struct Receive {
         }
 
         Blank().height(SizeConstant.SPACE_XXL)
-
-        Button("跳转到接收文件界面")
-          .onClick(() => {
-            this.pages.pushDestination({ name: 'ReceivingPage' })
-          })
       }
       .size({ width: '100%', height: '100%' })
       .padding({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })

@@ -1,6 +1,7 @@
 import { http } from '@kit.NetworkKit';
-import { BaseResponse } from '../model';
+import { BaseResponse, ErrorMessage } from '../model';
 import { JSON } from '@kit.ArkTS';
+import { HttpRequestError } from './HttpRequestError';
 
 interface EmptyInterface {}
 
@@ -11,7 +12,7 @@ enum ContentType {
 }
 
 async function request<T extends BaseResponse>(url: string, method: http.RequestMethod,
-  contentType?: ContentType, data?: object): Promise<T> {
+  contentType?: ContentType, data?: object | null): Promise<T> {
 
   try {
     // 每一个httpRequest对应一个HTTP请求任务，不可复用
@@ -21,7 +22,7 @@ async function request<T extends BaseResponse>(url: string, method: http.Request
       // 当使用POST请求时此字段用于传递请求体内容，具体格式与服务端协商确定
       // 开发者根据自身业务需要添加header字段
       header: { 'Content-Type': 'application/json' },
-      readTimeout: 10000, // 可选，默认为60000ms
+      readTimeout: 300000, // 可选，默认为60000ms //5分钟
       connectTimeout: 10000, // 可选，默认为60000ms
       usingProtocol: http.HttpProtocol.HTTP1_1,
       // caPath: '/path/to/cacert.pem', // 可选，默认使用系统预设CA证书，自API 10开始支持该属性
@@ -42,22 +43,6 @@ async function request<T extends BaseResponse>(url: string, method: http.Request
       //     hashAlgorithm: 'SHA-256' // 加密算法，当前仅支持SHA-256，自API 12开始支持该属性
       //   }
       // ],
-
-      // multiFormDataList: [// 可选，仅当Header中，'content-Type'为'multipart/form-data'时生效，自API 11开始支持该属性
-      //   {
-      //     name: "Part1", // 数据名，自API 11开始支持该属性
-      //     contentType: 'text/plain', // 数据类型，自API 11开始支持该属性
-      //     data: 'Example data', // 可选，数据内容，自API 11开始支持该属性
-      //     remoteFileName: 'example.txt' // 可选，自API 11开始支持该属性
-      //   },
-      //   {
-      //     name: "Part2", // 数据名，自API 11开始支持该属性
-      //     contentType: 'text/plain', // 数据类型，自API 11开始支持该属性
-      //     // data/app/el2/100/base/com.example.myapplication/haps/entry/files/fileName.txt
-      //     filePath: `${getContext(this).filesDir}/fileName.txt`, // 可选，传入文件路径，自API 11开始支持该属性
-      //     remoteFileName: 'fileName.txt' // 可选，自API 11开始支持该属性
-      //   }
-      // ]
     }
     if (method === http.RequestMethod.POST) {
       options.extraData = data || {} as EmptyInterface
@@ -68,7 +53,12 @@ async function request<T extends BaseResponse>(url: string, method: http.Request
       const result: T = JSON.parse(resp.result as string) as T
       return Promise.resolve(result)
     } else {
-      return Promise.reject(new Error(`response status error: ${resp.responseCode} ${resp.resultType}`))
+      let message: string = ''
+      if (resp.result) {
+        const result = JSON.parse(resp.result as string) as ErrorMessage
+        message = result.message
+      }
+      return Promise.reject(new HttpRequestError(resp.responseCode, message))
     }
   } catch (e) {
     return Promise.reject(e)
@@ -80,7 +70,7 @@ export class HttpRequest {
     return request(url, http.RequestMethod.GET)
   }
 
-  static async post<T extends BaseResponse>(url: string, data: object, contentType?: ContentType): Promise<T> {
+  static async post<T extends BaseResponse>(url: string, data: object | null, contentType?: ContentType): Promise<T> {
     return request(url, http.RequestMethod.POST, contentType, data)
   }
 }

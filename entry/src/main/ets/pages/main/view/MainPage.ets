@@ -1,6 +1,13 @@
 import { Screens, SizeConstant } from 'common';
 import { EventBus, EventType, ReceiveResultActionEvent } from '../../../eventbus';
-import { PrepareUploadModel, ReceiveResultAction, ReceiveResultActionType, AutoSaveModel } from '../../../model';
+import {
+  PrepareUploadModel,
+  ReceiveResultAction,
+  ReceiveResultActionType,
+  AutoSaveModel,
+  TransferPageParam,
+  FileInfoModel
+} from '../../../model';
 
 import { Receive } from '../receive';
 import { Send } from '../send';
@@ -20,7 +27,7 @@ export struct MainPage {
   @State mSendFileRequestData: PrepareUploadModel | null = null
   mSendFileRequestDialog: CustomDialogController | null = new CustomDialogController({
     width: '100%',
-    height: '60%',
+    height: '65%',
     cornerRadius: {
       bottomLeft: 0,
       bottomRight: 0
@@ -51,10 +58,20 @@ export struct MainPage {
         )
         dialog.close()
         this.mSendFileRequestData = null
+        FileProvider.setTransferringNow(false)
       },
       onAcceptClick: (dialog: CustomDialogController) => {
         dialog.close()
         this.toReceivingPage()
+      },
+      onCompleteClick: (dialog: CustomDialogController) => {
+        EventBus.getInstance().post(
+          EventType.RECEIVE_SEND_REQUEST_ACTION,
+          ReceiveResultActionEvent({ action: ReceiveResultActionType.COMPLETE } as ReceiveResultAction)
+        )
+        dialog.close()
+        this.mSendFileRequestData = null
+        FileProvider.setTransferringNow(false)
       }
     }),
     onWillDismiss: () => {
@@ -112,18 +129,24 @@ export struct MainPage {
     EventBus.getInstance().on(EventType.RECEIVE_SEND_REQUEST, (eventData: emitter.EventData) => {
       this.mSendFileRequestData = eventData.data as PrepareUploadModel
       if (this.mSendFileRequestData) {
-        //设置正在处理文件发送请求，屏蔽掉其他文件发送请求
-        FileProvider.setReceivingFiles(true)
+        let isReady = false
         if (this.autoSaveModel == AutoSaveModel.FAVORITES) {
           //todo 检查发送请求的设备是否在收藏夹
           this.toReceivingPage()
+          isReady = true
         } else if (this.autoSaveModel == AutoSaveModel.ALL) {
           this.toReceivingPage()
+          isReady = true
         } else {
           if (this.mSendFileRequestData && this.mSendFileRequestDialog) {
             this.mSendFileRequestDialog.open()
-            return
+            isReady = true
           }
+        }
+        if (isReady) {
+          //设置正在处理文件发送请求，屏蔽掉其他文件发送请求
+          FileProvider.setTransferringNow(true)
+          return
         }
       }
       //回复处理错误
@@ -141,11 +164,18 @@ export struct MainPage {
   }
 
   toReceivingPage() {
-    EventBus.getInstance().post(
-      EventType.RECEIVE_SEND_REQUEST_ACTION,
-      ReceiveResultActionEvent({ action: ReceiveResultActionType.ACCEPT } as ReceiveResultAction)
-    )
-    this.pages.pushPathByName(Routers.RECEIVING_PAGE, this.mSendFileRequestData?.files)
-    this.mSendFileRequestData = null
+    if (this.mSendFileRequestData?.files) {
+      const fileIds = Object.keys(this.mSendFileRequestData.files)
+      const files: FileInfoModel[] = []
+      for (const fileId of fileIds) {
+        files.push(this.mSendFileRequestData.files[fileId])
+      }
+      this.pages.pushPathByName(Routers.TRANSFER_PAGE, new TransferPageParam(false, files))
+      this.mSendFileRequestData = null
+      EventBus.getInstance().post(
+        EventType.RECEIVE_SEND_REQUEST_ACTION,
+        ReceiveResultActionEvent({ action: ReceiveResultActionType.ACCEPT } as ReceiveResultAction)
+      )
+    }
   }
 }

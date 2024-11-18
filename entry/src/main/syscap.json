@@ -1,0 +1,13 @@
+{
+  "devices": {
+    "general": [
+      "phone"
+    ]
+  },
+  "development": {
+    "addedSysCaps": [
+      "SystemCapability.FileManagement.UserFileService.FolderSelection",
+      "SystemCapability.FileManagement.AppFileService.FolderAuthorization"
+    ]
+  }
+}

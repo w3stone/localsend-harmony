@@ -2,7 +2,8 @@ import { BaseResponse } from "./BaseResponse";
 
 @Sendable
 export class DeviceModel extends BaseResponse {
-  key: string | undefined = undefined
+  key?: string | undefined = undefined
+  hostname?: string | undefined = undefined
   alias: string = ''
   version: string = "" // protocol version (major.minor)
   deviceModel: string = "" // nullable

@@ -1,46 +1,102 @@
-import { IpAddress, logger, SizeConstant, toast } from 'common';
-import { Icon, LoopImage, NavigationTitle } from '../../../../components';
-import wifiManager from '@ohos.wifiManager';
+import { logger, SizeConstant, toast } from 'common';
+import { Icon, NavigationTitle, SendRequestDialog } from '../../../../components';
 import { DeviceModel } from '../../../../model/DeviceModel';
 import { DeviceProvider } from '../../../../utils/DeviceProvider';
-import { EventType, EventBus } from '../../../../eventbus';
-import { DeviceIcon } from '../../../../components/DeviceIcon';
+import { EventBus, EventType } from '../../../../eventbus';
+import { SelectorButton } from './SelectorButton';
+import { DeviceItem } from '../../../../components/DeviceItem';
+import { picker } from '@kit.CoreFileKit';
+import { SelectedFiles } from './SelctedFiles';
+import { FileProvider, ObservedArray } from '../../../../utils';
+import { FileInfoModel } from '../../../../model';
+import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
+import { JSON } from '@kit.ArkTS';
 
 @Component
 export struct Send {
-  @State ip: string = ''
   @StorageLink(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) allDevice: DeviceModel[] = []
+  @State selectedFiles: ObservedArray<FileInfoModel> = []
+  @State send: ObservedArray<FileInfoModel> = []
+  @State toDevice: DeviceModel | null = null
+  mSendFileRequestDialog: CustomDialogController | null = new CustomDialogController({
+    width: '100%',
+    height: '100%',
+    offset: {
+      dx: 0,
+      //向下偏移显示在导航条下层
+      // dy: Screens.getNavigationBarHeight()
+      dy: 0
+    },
+    // autoCancel: false,
+    // alignment: DialogAlignment.Bottom,
+    // openAnimation: {
+    //   duration: 300,
+    //   curve: Curve.Friction,
+    //   playMode: PlayMode.Alternate,
+    // },
+    // closeAnimation: {
+    //   duration: 300,
+    //   curve: Curve.Friction,
+    //   playMode: PlayMode.Alternate,
+    // },
+    builder: SendRequestDialog({
+      files: this.selectedFiles,
+      target: this.toDevice,
+    }),
+    // onWillDismiss: () => {
+    //   //阻止交互式关闭弹窗
+    // }
+  })
 
   build() {
     NavigationTitle({ title: $r('app.string.select') }) {
       Column() {
-        Row() {
-          IconButton({
-            text: $r('app.string.file'), icon: $r('app.media.ic_file'), click: () => {
-              toast.show("发送文件")
-            }
-          })
-          Blank().width(SizeConstant.SPACE_M)
-          IconButton({
-            text: $r('app.string.folder'), icon: $r('app.media.ic_folder_filled'), click: () => {
-              toast.show("发送文件")
-            }
-          })
-          Blank().width(SizeConstant.SPACE_M)
-          IconButton({
-            text: $r('app.string.text'), icon: $r('app.media.ic_text_filled'), click: () => {
-              toast.show("发送文件")
-            }
-          })
-          Blank().width(SizeConstant.SPACE_M)
-          IconButton({
-            text: $r('app.string.clipboard'), icon: $r('app.media.ic_clipboard'), click: () => {
-              toast.show("发送文件")
-            }
-          })
-        }
-        .width('100%')
+        if (this.selectedFiles && this.selectedFiles.length > 0) {
+          SelectedFiles({
+            files: this.selectedFiles,
+            onCloseClick: () => {
+              toast.show('clear')
+              this.selectedFiles = []
+            },
+            onEditClick: () => {
 
+            },
+            onAppendClick: () => {
+              this.addSelectFile()
+            }
+          })
+        } else {
+          Row() {
+            SelectorButton({ text: $r('app.string.file'), icon: $r('app.media.ic_file') })
+              .layoutWeight(1)
+              .onClick(() => {
+                this.addSelectFile()
+              })
+            Blank().width(SizeConstant.SPACE_M)
+            if (canIUse('SystemCapability.FileManagement.UserFileService.FolderSelection')) {
+              SelectorButton({ text: $r('app.string.folder'), icon: $r('app.media.ic_folder_filled') })
+                .layoutWeight(1)
+                .onClick(() => {
+                  this.addSelectFile(picker.DocumentSelectMode.FOLDER)
+                })
+              Blank().width(SizeConstant.SPACE_M)
+            }
+            SelectorButton({ text: $r('app.string.text'), icon: $r('app.media.ic_text_filled') })
+              .layoutWeight(1)
+              .onClick(() => {
+                this.onSendTextMessageClick()
+              })
+            Blank().width(SizeConstant.SPACE_M)
+            SelectorButton({ text: $r('app.string.clipboard'), icon: $r('app.media.ic_clipboard') })
+              .layoutWeight(1)
+              .onClick(() => {
+                toast.show("发送文件")
+              })
+          }
+          .width('100%')
+        }
+
+        //附近设备
         Row() {
           Text($r('app.string.nearby_devices'))
             .fontSize(SizeConstant.TEXT_XXL)
@@ -49,43 +105,31 @@ export struct Send {
           Icon({
             src: $r('app.media.ic_rotate'),
             spacing: SizeConstant.SPACE_EXTRA_S,
-            click: () => {
-              toast.show("查找设备")
-              EventBus.getInstance().post(EventType.SCAN_DEVICE)
-            }
+          }).onClick(() => {
+            this.allDevice = []
+            EventBus.getInstance().post(EventType.SCAN_DEVICE)
           })
           Blank().width(SizeConstant.SPACE_L)
           Icon({
             src: $r('app.media.ic_quickstart'),
             spacing: SizeConstant.SPACE_EXTRA_S,
-            click: () => {
-              toast.show("手动发送")
-            }
+          }).onClick(() => {
+            toast.show("手动发送")
           })
           Blank().width(SizeConstant.SPACE_L)
           Icon({
             src: $r('app.media.ic_favor'), spacing: SizeConstant.SPACE_EXTRA_S,
-            click: () => {
-              toast.show("收藏夹")
-            }
+          }).onClick(() => {
+            toast.show("收藏夹")
           })
           Blank().width(SizeConstant.SPACE_L)
           Icon({
             src: $r('app.media.ic_settings'), spacing: SizeConstant.SPACE_EXTRA_S,
-            click: () => {
-              toast.show("发送模式")
-            }
+          }).onClick(() => {
+            toast.show("发送模式")
           })
         }
         .margin({ top: SizeConstant.SPACE_XL })
-
-        Text(this.ip)
-          .fontSize(SizeConstant.TEXT_XL)
-          .fontColor($r('app.color.on_container'))
-
-        Text(`设备数量: ${this.allDevice.length}`)
-          .fontSize(SizeConstant.TEXT_XL)
-          .fontColor($r('app.color.on_container'))
 
         //设备列表
         if (this.allDevice.length > 0) {
@@ -95,6 +139,20 @@ export struct Send {
               (item: DeviceModel) => {
                 ListItem() {
                   DeviceItem({ device: item })
+                    .onClick(() => {
+                      if (!this.selectedFiles || this.selectedFiles.length == 0) {
+                        DialogHelper.showAlertDialog({
+                          title: $r('app.string.unselected_file'),
+                          content: $r('app.string.unselected_file_text'),
+                          secondaryButton: $r('app.string.close'),
+                          onAction: () => {
+                          },
+                        })
+                      } else {
+                        this.toDevice = item
+                        this.mSendFileRequestDialog?.open()
+                      }
+                    })
                 }
               },
               (item: DeviceModel, index: number) => `${item.key}_${index}`
@@ -116,91 +174,29 @@ export struct Send {
     }
   }
 
-  aboutToAppear(): void {
-    wifiManager.getLinkedInfo()
-      .then((info) => {
-        let checker: IpAddress = new IpAddress()
-        this.ip = 'ssid: ' + info.ssid + ' ip: ' + checker.int2ip(info.ipAddress)
-        logger.info("SendPage", `address = ${checker.int2ip(info.ipAddress)} LinkedInfo = ${JSON.stringify(info)}`)
+  addSelectFile(model: picker.DocumentSelectMode | undefined = undefined) {
+    FileProvider.selectFile(this.selectedFiles, model)
+      .then((files: FileInfoModel[]) => {
+        this.selectedFiles.push(...files)
+      })
+      .catch((e: Error) => {
+        logger.info('Send', `selected files error => ${e.message}\n${e.stack}`)
       })
   }
-}
 
-@Component
-struct IconButton {
-  @Prop text: string | Resource
-  @Prop icon: Resource
-  click?: VoidCallback
-
-  build() {
-    Column() {
-      Icon({ src: this.icon })
-      Blank().width(SizeConstant.SPACE_M)
-      Text(this.text)
-        .fontSize(SizeConstant.TEXT_M)
-        .fontColor($r('app.color.on_container'))
-    }
-    .layoutWeight(1)
-    .padding({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
-    .backgroundColor($r('app.color.background'))
-    .borderRadius(SizeConstant.RADIUS_L)
-    .onClick(() => {
-      if (this.click) {
-        this.click()
-      }
-    })
-  }
-}
-
-@Component
-struct DeviceItem {
-  @State device: DeviceModel | undefined = undefined
-
-  build() {
-    Row() {
-      if (this.device) {
-        DeviceIcon({ deviceType: this.device.deviceType })
-      } else {
-        LoopImage({
-          images: [
-            $r('app.media.ic_mobile'), $r('app.media.ic_computer'),
-            $r('app.media.ic_cli'), $r("app.media.ic_storage"), $r("app.media.ic_web")
-          ]
-        })
-      }
-      Blank().width(SizeConstant.TEXT_L)
-      Column() {
-        Text(this.device?.alias || "")
-          .fontSize(SizeConstant.TEXT_XL)
-          .fontColor($r('app.color.on_container'))
-        Blank().height(SizeConstant.TEXT_M)
-        Row() {
-          Text(this.device == undefined ? "" : "#1")
-            .fontSize(SizeConstant.TEXT_XL)
-            .fontColor($r('app.color.on_container'))
-            .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
-            .backgroundColor($r('app.color.container'))
-            .borderRadius(SizeConstant.RADIUS_M)
-            .visibility(this.device == undefined ? Visibility.None : Visibility.Visible)
-          Blank().width(SizeConstant.TEXT_M)
-          Text(this.device?.deviceModel || "")
-            .fontSize(SizeConstant.TEXT_XL)
-            .fontColor($r('app.color.on_container'))
-            .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
-            .backgroundColor($r('app.color.container'))
-            .borderRadius(SizeConstant.RADIUS_M)
+  onSendTextMessageClick() {
+    DialogHelper.showTextAreaDialog({
+      title: $r('app.string.enter_message'),
+      text: '',
+      inputBorder: {
+        radius: SizeConstant.RADIUS_M
+      },
+      onAction: (action: DialogAction, _: string, content: string) => {
+        if (action == DialogAction.TWO) {
+          this.selectedFiles.push(...FileProvider.createTextMessages(content))
+          logger.info('Send', `selected: ${JSON.stringify(this.selectedFiles)}`)
         }
       }
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-
-      Icon({ src: $r('app.media.ic_favor') }).align(Alignment.Center)
-        .visibility(this.device == undefined ? Visibility.None : Visibility.Visible)
-    }
-    .width('100%')
-    .margin({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
-    .padding(SizeConstant.SPACE_L)
-    .borderRadius(SizeConstant.RADIUS_L)
-    .backgroundColor($r('app.color.background'))
+    })
   }
 }

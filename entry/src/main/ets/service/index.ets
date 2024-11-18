@@ -1,2 +1,3 @@
 export * from './WebService'
-export * from './ResponseService'
+export * from './WebClient'
+export * from './upload'

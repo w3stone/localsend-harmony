@@ -2,6 +2,6 @@ export class Routers {
   private constructor() {
   }
 
-  static RECEIVING_PAGE = 'ReceivingPage'
+  static TRANSFER_PAGE = 'TransferPage'
   static INDEX = 'INDEX'
 }

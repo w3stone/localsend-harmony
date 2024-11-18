@@ -37,6 +37,8 @@ export class SizeConstant {
   static readonly RADIUS_M = 5
   // 大号圆角
   static readonly RADIUS_L = 14
+  // 大号圆角
+  static readonly RADIUS_XXL = 26
 
   // 间距相关
   // 小号间距
