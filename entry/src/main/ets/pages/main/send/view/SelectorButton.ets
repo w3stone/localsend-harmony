@@ -18,7 +18,7 @@ export struct SelectorButton {
     }
     .width('100%')
     .padding({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
-    .backgroundColor($r('app.color.background'))
+    .backgroundColor($r('app.color.container'))
     .borderRadius(SizeConstant.RADIUS_L)
   }
 }

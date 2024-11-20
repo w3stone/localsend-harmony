@@ -189,6 +189,14 @@
       "value": "继续"
     },
     {
+      "name": "alias",
+      "value": "别名："
+    },
+    {
+      "name": "port",
+      "value": "端口："
+    },
+    {
       "name": "auto_save",
       "value": "自动保存"
     },
@@ -227,6 +235,122 @@
     {
       "name": "read_pasteboard_reason",
       "value": "用于向其他设备发送您剪切板中复制的内容"
+    },
+    {
+      "name": "history",
+      "value": "历史"
+    },
+    {
+      "name": "open_file",
+      "value": "打开文件"
+    },
+    {
+      "name": "open_in_fm",
+      "value": "在文件管理中显示"
+    },
+    {
+      "name": "information",
+      "value": "信息"
+    },
+    {
+      "name": "delete_from_history",
+      "value": "从历史记录中删除"
+    },
+    {
+      "name": "file_information",
+      "value": "文件信息"
+    },
+    {
+      "name": "file_name",
+      "value": "文件名："
+    },
+    {
+      "name": "file_path",
+      "value": "路径："
+    },
+    {
+      "name": "file_size",
+      "value": "大小："
+    },
+    {
+      "name": "sender",
+      "value": "发送者："
+    },
+    {
+      "name": "time",
+      "value": "时间："
+    },
+    {
+      "name": "universal",
+      "value": "通用"
+    },
+    {
+      "name": "theme",
+      "value": "主题"
+    },
+    {
+      "name": "light",
+      "value": "亮色"
+    },
+    {
+      "name": "dark",
+      "value": "深色"
+    },
+    {
+      "name": "flow_system",
+      "value": "跟随系统"
+    },
+    {
+      "name": "use_pin",
+      "value": "需要一个PIN"
+    },
+    {
+      "name": "aut_complete",
+      "value": "自动完成"
+    },
+    {
+      "name": "save_to_history",
+      "value": "保存到历史记录"
+    },
+    {
+      "name": "auto_receive_link_sharing",
+      "value": "通过链接分享：自动接受"
+    },
+    {
+      "name": "network",
+      "value": "网络"
+    },
+    {
+      "name": "service",
+      "value": "服务器"
+    },
+    {
+      "name": "device_type",
+      "value": "设备类型"
+    },
+    {
+      "name": "device_model",
+      "value": "设备型号"
+    },
+    {
+      "name": "scan_timeout",
+      "value": "搜索设备超时"
+    },
+    {
+      "name": "secret",
+      "value": "加密"
+    },
+    {
+      "name": "multicast",
+      "value": "多播"
+    },
+    {
+      "name": "other",
+      "value": "其他"
+    },
+    {
+      "name": "about",
+      "value": "关于"
     }
   ]
 }

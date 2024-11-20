@@ -7,16 +7,18 @@
     {
       "name": "start_window_background",
       "value": "#EDEDED"
-    },{
+    },
+    {
       "name": "error",
       "value": "#F04533"
-    },{
+    },
+    {
       "name": "warn",
       "value": "#FF9B0A"
     },
     {
       "name": "container",
-      "value": "#FFFFFF"
+      "value": "#F2F3F5"
     },
     {
       "name": "on_container",
@@ -28,7 +30,7 @@
     },
     {
       "name": "background",
-      "value": "#EDEDED"
+      "value": "#FFFFFF"
     },
     {
       "name": "on_background",
@@ -49,6 +51,10 @@
     {
       "name": "card",
       "value": "#F3F3FA"
+    },
+    {
+      "name": "button_background",
+      "value": "#F3F3F3"
     }
   ]
 }

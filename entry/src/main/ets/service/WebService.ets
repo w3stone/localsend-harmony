@@ -8,10 +8,10 @@ import {
   ReceiveResultActionType
 } from '../model';
 import { socket } from '@kit.NetworkKit';
-import { logger, Strings } from 'common';
+import { Errors, logger, Strings } from 'common';
 import { buffer, JSON } from '@kit.ArkTS';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
-import { NetAddress } from '../constant';
+import { Keys } from '../constant';
 import { WebClient } from './WebClient';
 import { DeviceProvider } from '../utils';
 import { EventBus, EventType, PrepareUploadEvent } from '../eventbus';
@@ -43,17 +43,22 @@ const udp: socket.MulticastSocket = socket.constructMulticastSocketInstance();
 export class WebService {
   isRunning: boolean = false
   alias: string = ''
+  port: number = AppStorage.get(Keys.PORT) || 53317
+  multicast: string = '224.0.0.167'
 
   constructor(alias: string) {
     this.alias = alias
   }
 
-  start() {
-    udp.addMembership(NetAddress, (err: BusinessError) => {
+  start(port: number | undefined = undefined) {
+    if (port) {
+      this.port = this.port
+    }
+    udp.addMembership({ address: this.multicast, port: this.port }, (err: BusinessError) => {
       if (err) {
         logger.info(TAG, `>>>--- UDP 组播添加失败 -> ${JSON.stringify(err)}`)
       } else {
-        logger.info(TAG, `>>>--- UDP 组播已添加 -> Running: ${NetAddress.address}:${NetAddress.port}`);
+        logger.info(TAG, `>>>--- UDP 组播已添加 -> Running: ${this.multicast}:${this.port}`);
       }
     })
     udp.on("listening", () => {
@@ -64,10 +69,11 @@ export class WebService {
     })
     udp.on('message', (info: socket.SocketMessageInfo) => {
       let message = Strings.buf2String(info.message)
-      logger.info(TAG, '<<<---UDP received message: ' + message);
       let device: DeviceModel = JSON.parse(message) as DeviceModel
       if (device && device.fingerprint != DeviceProvider.getDeviceFingerprint() && device.announce == true) {
         device.hostname = info.remoteInfo.address
+        DeviceProvider.addOrReplaceDevice(info.remoteInfo.address, device)
+        logger.info(TAG, '<<<---UDP received message: ' + JSON.stringify(device));
         WebClient.register(device)
       }
     })
@@ -78,30 +84,27 @@ export class WebService {
       .post("/api/localsend/v2/upload", this.upload)
       .post("/api/localsend/v2/cancel", this.cancel)
       .post("/api/localsend/v2/download", this.cancel)
-      .listen(NetAddress.port, "0.0.0.0")
+      .listen(this.port, "0.0.0.0")
     this.scanOtherDevice()
   }
 
-  stop() {
+  async stop(): Promise<void> {
     this.isRunning = false
-    app.server?.stop()
-    udp.dropMembership(NetAddress, (err: BusinessError) => {
-      if (err) {
-        logger.info(TAG, `退出组播失败: ${JSON.stringify(err)}`)
-      } else {
-        logger.info(TAG, `已退出组播: ${NetAddress.address}:${NetAddress.port}`)
-      }
-    })
-    udp.off("message")
-    udp.close(() => {
-      logger.info(TAG, "Stoped services")
-    })
+    try {
+      app.server?.stop()
+      udp.off("message")
+      await udp.dropMembership({ address: this.multicast, port: this.port })
+      await udp.close()
+    } catch (e) {
+      logger.warn(TAG, `WebService stop error: ${Errors.getErrorMessage(e)}`)
+    }
   }
 
   scanOtherDevice() {
+    const address: socket.NetAddress = { address: this.multicast, port: this.port }
     let options: socket.UDPSendOptions = {
-      data: JSON.stringify(new MulticastModel(this.alias, NetAddress.port, true)),
-      address: NetAddress
+      data: JSON.stringify(new MulticastModel(true)),
+      address: address
     }
     udp.send(options, (err: BusinessError) => {
       if (err) {
@@ -122,7 +125,7 @@ export class WebService {
     device.hostname = req.remote.address
     logger.info(TAG, "<<<--- register: " + JSON.stringify(device))
     DeviceProvider.addOrReplaceDevice(req.remote.address, device)
-    res.writeJson(new MulticastModel(this.alias, NetAddress.port, false))
+    res.writeJson(new MulticastModel(false))
   }
 
   private prepareUpload(req: IncomingMessage, res: ServerResponse) {

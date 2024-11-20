@@ -208,9 +208,7 @@ export class FileProvider {
       let stat: fs.Stat
       for (const uri of uris) {
         const path = new fileUri.FileUri(uri).path
-        const findIndex = selected.findIndex((file: FileInfoModel, _: number) => {
-          return file.filePath === path
-        })
+        const findIndex = selected.findIndex((file: FileInfoModel, _: number) => file.filePath === path)
         if (findIndex >= 0) {
           continue
         }

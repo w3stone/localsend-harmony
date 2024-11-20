@@ -5,6 +5,15 @@ export class Keys {
   private constructor() {
   }
 
+  static WINDOW_STAGE = 'WINDOW_STAGE'
+  /**
+   * 系统颜色模式
+   */
+  static SYSTEM_COLOR_MODE = 'SYSTEM_COLOR_MODE'
+  /**
+   * 当前APP设置的颜色模式
+   */
+  static COLOR_MODE = 'COLOR_MODE'
   /**
    * 当前是否正处于文件传输状态
    * value = [boolean]
@@ -15,6 +24,11 @@ export class Keys {
    * value = [string]
    */
   static ALIAS = 'alias'
+  /**
+   * HttpService监听端口
+   * value = [string]
+   */
+  static PORT = 'PORT'
   /**
    * 当前设备指纹
    * value = [string]

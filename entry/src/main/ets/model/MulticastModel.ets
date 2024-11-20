@@ -1,13 +1,14 @@
 import { DeviceModel } from './DeviceModel'
 import { DeviceProvider } from '../utils'
+import { Keys } from '../constant'
 
 @Sendable
 export class MulticastModel extends DeviceModel {
-  constructor(alias: string, port: number, announce: boolean | undefined = undefined) {
+  constructor(announce: boolean | undefined = undefined) {
     super()
-    super.alias = alias
+    super.alias = AppStorage.get(Keys.ALIAS) || ''
     super.version = '2.1'
-    super.port = port
+    super.port = AppStorage.get(Keys.PORT) || 53317
     super.announce = announce
     super.fingerprint = DeviceProvider.getDeviceFingerprint()
     super.deviceModel = 'HarmonyOS'

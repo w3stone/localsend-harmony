@@ -1,12 +1,14 @@
 import { socket } from '@kit.NetworkKit';
-import { FileInfoModel, FileTransferStatus } from '../../model';
+import { FileInfoModel, FileTransferStatus, StringPair } from '../../model';
 import { fileIo as fs } from '@kit.CoreFileKit';
-import { logger, Errors } from 'common';
+import { Errors, logger } from 'common';
 import { buffer } from '@kit.ArkTS';
-import { FileProvider } from '../../utils';
+import { Dates, FileProvider } from '../../utils';
 import { HttpProtocol } from './HttpProtocol';
 import { TransferException } from './TransferException';
-import { Terminator } from './Terminator';
+import { Terminator } from '../../http';
+import { request, } from '@kit.BasicServicesKit';
+import { Context } from '@kit.AbilityKit';
 
 const TAG: string = 'UploaderServer'
 
@@ -24,6 +26,70 @@ export class UploaderServer implements Terminator {
   constructor(hostname: string, port: number,) {
     this.hostname = hostname
     this.port = port
+  }
+
+  config: request.agent.Config = {
+    action: request.agent.Action.UPLOAD,
+    headers: {},
+    url: '',
+    title: 'createTest',
+    description: 'Sample code for create task',
+    mode: request.agent.Mode.BACKGROUND,
+    overwrite: false,
+    method: "POST",
+    data: [],
+    saveas: "./",
+    network: request.agent.Network.WIFI,
+    metered: false,
+    roaming: true,
+    retry: true,
+    redirect: true,
+    index: 0,
+    begins: 0,
+    ends: -1,
+    gauge: true,
+    precise: false,
+    token: "it is a secret"
+  }
+  task: request.agent.Task | null = null
+
+  async createBackgroundTask(context: Context, url: string, token: string, fileUri: string) {
+    const headers: StringPair = {}
+    this.config.url = url;
+    this.config.headers = headers
+    this.config.data = [{
+      name: 'LOG_20241106150606.zip',
+      value: {
+        path: fileUri
+      }
+    }];
+    this.config.mode = request.agent.Mode.FOREGROUND;
+    this.config.token = token
+    try {
+      logger.info(TAG, `create task: ` + JSON.stringify(this.config))
+      this.task = await request.agent.create(context, this.config);
+      this.task.on('progress', (progress: request.agent.Progress) => {
+        logger.info(TAG, `progress,  progress = ${progress.processed} ${progress.state}`);
+      })
+      await this.task.start();
+      logger.info(TAG, `createBackgroundTask success`);
+    } catch (err) {
+      logger.error(TAG, `task  err, err  = ${Errors.getErrorMessage(err)}`);
+      throw new TransferException('task error')
+    }
+  }
+
+  getAttachments(info: FileInfoModel): Array<request.agent.FormItem> {
+    const items: request.agent.FormItem[] = []
+    items.push({
+      name: info.fileName,
+      value: {
+        // filename: info.fileName,
+        // mimeType: info.fileType,
+        path: info.filePath!!
+      }
+    })
+    return items
   }
 
   /**
@@ -46,9 +112,13 @@ export class UploaderServer implements Terminator {
       //已读文件长度
       let readSize: number = 0
       //本次读取到buffer的长度
+      let start = Dates.now()
       let length: number = await fs.read(file.fd, input, { offset: readSize, length: MAX_READ_LENGTH })
+      logger.info(TAG, `读取耗时: ${Dates.consumed(start)}ms`)
       readSize += length
+      start = Dates.now()
       await this.sendChunked(url, info.size, input, info.fileType, false)
+      logger.info(TAG, `发送耗时: ${Dates.consumed(start)}ms`)
       callback(FileTransferStatus.TRANSFERRING, readSize, info.size, info.id)
       //分片向服务器发送二进制流
       while (length > 0) {
@@ -57,9 +127,13 @@ export class UploaderServer implements Terminator {
           break
         }
         input = new ArrayBuffer(MAX_READ_LENGTH)
+        start = Dates.now()
         length = await fs.read(file.fd, input, { offset: readSize, length: MAX_READ_LENGTH })
+        logger.info(TAG, `读取耗时: ${Dates.consumed(start)}`)
         readSize += length
+        start = Dates.now()
         await this.sendChunked(url, info.size, (length < MAX_READ_LENGTH) ? input.slice(0, length) : input, info.fileType, true)
+        logger.info(TAG, `发送耗时: ${Dates.consumed(start)}`)
         callback(FileTransferStatus.TRANSFERRING, readSize, info.size, info.id)
       }
       callback(FileTransferStatus.COMPLETED, readSize, info.size, info.id)
@@ -106,6 +180,10 @@ export class UploaderServer implements Terminator {
         timeout: 10000
       }
       await this.tcp.connect(connectOption)
+      await this.tcp.setExtraOptions({
+        keepAlive: true,
+        TCPNoDelay: true
+      })
       this.tcp.on('message', this.onMessage)
       this.isConnected = true
     } catch (e) {
@@ -116,6 +194,7 @@ export class UploaderServer implements Terminator {
   }
 
   private onMessage(info: socket.SocketMessageInfo) {
+
     logger.debug(TAG, `<<<---UploadResponse: \n${buffer.from(info.message).toString()}`)
   }
 

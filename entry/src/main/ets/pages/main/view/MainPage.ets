@@ -19,7 +19,6 @@ import { Keys } from '../../../constant';
 
 @Component
 export struct MainPage {
-  @StorageLink("DARK_MODE") isDark: boolean = false
   @StorageProp(Keys.AUTO_SAVE_MODEL) autoSaveModel: AutoSaveModel = AutoSaveModel.CLOSE
   @Consume('pages') pages: NavPathStack;
   @State currentTabIndex: number = 0
@@ -116,7 +115,7 @@ export struct MainPage {
     .scrollable(false)
     .animationMode(AnimationMode.NO_ANIMATION)
     .barMode(BarMode.Fixed)
-    .barBackgroundColor($r('app.color.background'))
+    .barBackgroundColor($r('app.color.container'))
     .height('100%')
     .padding({ bottom: Screens.getNavigationBarHeight() })
     .onChange((index) => {

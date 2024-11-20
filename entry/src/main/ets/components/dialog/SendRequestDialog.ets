@@ -1,11 +1,10 @@
 import { DeviceModel, FileInfoModel, PrepareTransferModel, TransferPageParam } from '../../model'
 import { DeviceItem, Icon, IconButton } from '..'
 import { DeviceProvider, Routers } from '../../utils'
-import { logger, SizeConstant } from 'common'
+import { Errors, logger, SizeConstant } from 'common'
 import { AnimationHelper } from '@pura/harmony-dialog'
 import { WebClient } from '../../service/WebClient'
-import { JSON } from '@kit.ArkTS'
-import { HttpRequestError } from '../../http'
+import { HttpRequestError, Terminator } from '../../http'
 
 @CustomDialog
 export struct SendRequestDialog {
@@ -17,6 +16,7 @@ export struct SendRequestDialog {
   @State message: ResourceStr = $r('app.string.waiting_response')
   @State isComplete: boolean = false
   @State sessionId: string = ''
+  @State terminate: Terminator | null = null
 
   build() {
     Column() {
@@ -66,9 +66,14 @@ export struct SendRequestDialog {
     this.sendPrepareUpload()
   }
 
+  aboutToDisappear(): void {
+    this.isComplete = true
+    this.terminate?.terminate()
+  }
+
   sendPrepareUpload() {
     if (this.target && this.files.length > 0) {
-      WebClient.prepareUpload(this.target, this.files)
+      WebClient.prepareUpload(this.target, this.files, (terminate: Terminator) => this.terminate = terminate)
         .then((result: PrepareTransferModel) => {
           this.sessionId = result.sessionId
           const parma = new TransferPageParam(true, this.files)
@@ -89,9 +94,11 @@ export struct SendRequestDialog {
             } else {
               this.message = $r('app.string.error')
             }
-            this.isComplete = true
+          } else {
+            this.message = $r('app.string.error')
           }
-          logger.info('SendRequestDialog', `返回错误: ${JSON.stringify(reason)}`)
+          this.isComplete = true
+          logger.info('SendRequestDialog', `返回错误: ${Errors.getErrorMessage(reason)}`)
         })
     }
   }

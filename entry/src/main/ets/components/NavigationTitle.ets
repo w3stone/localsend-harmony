@@ -5,16 +5,16 @@ import { Icon } from '.'
 @Component
 export struct NavigationTitle {
   @State title: ResourceStr | undefined = undefined
-  @State titleBackgroundColor: ResourceColor = $r('app.color.container')
-  @Prop menus: IconMenu[] = []
-  onMenuClick?: (menu: IconMenu) => void
+  @State isHideBackButton: boolean = false
+  @State titleBackgroundColor: ResourceColor = $r('app.color.background')
+  @State menus: IconMenu[] = []
+  onMenuClick?: (index: number) => void
 
   @Builder
   doNothingBuilder() {
   }
 
   @BuilderParam content: VoidCallback = this.doNothingBuilder
-  onBackClick?: VoidCallback
 
   @Builder
   titleBar() {
@@ -27,7 +27,7 @@ export struct NavigationTitle {
           .align(Alignment.Center)
       }
       Blank().layoutWeight(1)
-      ForEach(this.menus, (item: IconMenu) => {
+      ForEach(this.menus, (item: IconMenu, index: number) => {
         Icon({
           src: item.icon,
           iconColor: $r('app.color.on_container'),
@@ -36,7 +36,7 @@ export struct NavigationTitle {
           .margin({ right: SizeConstant.SPACE_L })
           .onClick(() => {
             if (this.onMenuClick) {
-              this.onMenuClick(item)
+              this.onMenuClick(index)
             }
           })
       })
@@ -55,7 +55,7 @@ export struct NavigationTitle {
       paddingEnd: LengthMetrics.vp(SizeConstant.SPACE_L),
     })
     .titleMode(NavigationTitleMode.Mini)
-    .hideBackButton((this.onBackClick == undefined) ? true : false)
+    .hideBackButton(this.isHideBackButton)
     .padding({ top: Screens.getStatusBarHeight() })
     .backgroundColor(this.titleBackgroundColor)
   }
@@ -63,5 +63,4 @@ export struct NavigationTitle {
 
 export interface IconMenu {
   icon: Resource
-  index: number
 }

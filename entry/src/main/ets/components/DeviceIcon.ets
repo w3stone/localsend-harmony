@@ -18,9 +18,9 @@ export struct DeviceIcon {
       case 'desktop':
         return $r('app.media.ic_computer')
       case 'server':
-        return $r('app.media.ic_cli')
-      case 'headless':
         return $r('app.media.ic_storage')
+      case 'headless':
+        return $r('app.media.ic_cli')
       case 'web':
         return $r('app.media.ic_web')
       default:

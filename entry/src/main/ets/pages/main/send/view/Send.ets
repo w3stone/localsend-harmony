@@ -23,33 +23,16 @@ export struct Send {
     height: '100%',
     offset: {
       dx: 0,
-      //向下偏移显示在导航条下层
-      // dy: Screens.getNavigationBarHeight()
       dy: 0
     },
-    // autoCancel: false,
-    // alignment: DialogAlignment.Bottom,
-    // openAnimation: {
-    //   duration: 300,
-    //   curve: Curve.Friction,
-    //   playMode: PlayMode.Alternate,
-    // },
-    // closeAnimation: {
-    //   duration: 300,
-    //   curve: Curve.Friction,
-    //   playMode: PlayMode.Alternate,
-    // },
     builder: SendRequestDialog({
       files: this.selectedFiles,
       target: this.toDevice,
     }),
-    // onWillDismiss: () => {
-    //   //阻止交互式关闭弹窗
-    // }
   })
 
   build() {
-    NavigationTitle({ title: $r('app.string.select') }) {
+    NavigationTitle({ title: $r('app.string.select'), isHideBackButton: true }) {
       Column() {
         if (this.selectedFiles && this.selectedFiles.length > 0) {
           SelectedFiles({

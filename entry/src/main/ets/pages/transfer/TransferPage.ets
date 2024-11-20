@@ -1,5 +1,5 @@
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
-import { logger, Screens, SizeConstant } from 'common';
+import { Errors, logger, Screens, SizeConstant } from 'common';
 import { IconButton, NavigationTitle } from '../../components';
 import {
   DeviceModel,
@@ -9,12 +9,12 @@ import {
   TransferPageParam,
   TransferProgressChangedAction
 } from '../../model';
-import { Terminator, WebClient } from '../../service';
+import { WebClient } from '../../service';
 import { FileProvider, Routers } from '../../utils';
 import { FileItem } from './FileItem';
-import { JSON } from '@kit.ArkTS';
 import { EventBus, EventType } from '../../eventbus';
 import { emitter } from '@kit.BasicServicesKit';
+import { Terminator } from '../../http';
 
 @Component
 export struct TransferPage {
@@ -30,7 +30,10 @@ export struct TransferPage {
 
   build() {
     NavDestination() {
-      NavigationTitle({ title: this.param.isSent ? $r('app.string.sending_files') : $r('app.string.receiving_files') }) {
+      NavigationTitle({
+        title: this.param.isSent ? $r('app.string.sending_files') : $r('app.string.receiving_files'),
+        isHideBackButton: true
+      }) {
         RelativeContainer() {
           if (!this.param.isSent) {
             Text($r('app.string.save_directory', FileProvider.getDefaultFileDir(getContext(this))))
@@ -159,6 +162,7 @@ export struct TransferPage {
   }
 
   aboutToDisappear(): void {
+    EventBus.getInstance().unregister(EventType.TRANSFER_PROGRESS_CHANGED_ACTION)
     this.status.clear()
     this.terminate = undefined
   }
@@ -209,13 +213,20 @@ export struct TransferPage {
   startTransfer() {
     if (this.param.sessionId && (this.param.target || []).length > 0 && this.param.fileToken) {
       const target: DeviceModel = this.param.target!![0]
-      WebClient.upload(this.param.sessionId, target, this.param.files, this.param.fileToken, (terminate: Terminator) => {
-        this.terminate = terminate
-      }).then(() => {
-        this.allCompleted = true
-      }).catch((e: object) => {
-        logger.warn('TransferPage', `startTransferFiles => ${JSON.stringify(e)}`)
-      })
+      // WebClient.upload(this.param.sessionId, target, this.param.files, this.param.fileToken, (terminate: Terminator) => {
+      //   this.terminate = terminate
+      // }).then(() => {
+      //   this.allCompleted = true
+      // }).catch((e: object) => {
+      //   logger.warn('TransferPage', `startTransferFiles => ${JSON.stringify(e)}`)
+      // })
+
+      WebClient.uploadFiles(getContext(this), this.param.sessionId, target, this.param.files, this.param.fileToken,
+        (terminate: Terminator) => this.terminate = terminate)
+        .then(() => this.allCompleted = true)
+        .catch((e: object) => {
+          logger.warn('TransferPage', `startTransfer => ${Errors.getErrorMessage(e)}`)
+        })
     }
   }
 

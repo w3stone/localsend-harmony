@@ -2,7 +2,7 @@ import { Colors, CustomColors } from "@kit.ArkUI";
 
 export class DefaultColors implements CustomColors {
   brand?: ResourceColor | undefined = $r('app.color.primary')
-  fontPrimary?: ResourceColor | undefined = $r('app.color.primary')
+  fontPrimary?: ResourceColor | undefined = $r('app.color.on_background')
   backgroundPrimary?: ResourceColor | undefined = $r('app.color.background')
 }
 

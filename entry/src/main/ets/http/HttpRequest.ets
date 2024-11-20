@@ -2,21 +2,27 @@ import { http } from '@kit.NetworkKit';
 import { BaseResponse, ErrorMessage } from '../model';
 import { JSON } from '@kit.ArkTS';
 import { HttpRequestError } from './HttpRequestError';
+import { HttpLogging } from './HttpLogging';
+import { HttpTerminator, Terminator } from '.';
 
 interface EmptyInterface {}
 
-enum ContentType {
+export enum ContentType {
   APPLICATION_JSON = 'application/json',
   APPLICATION_FORM_URLENCODED = 'application/x-www-form-urlencoded',
   MULTIPART_FORM_DATA = 'multipart/form-data',
+  APPLICATION_OCTET_STREAM = 'multipart/octet-stream',
 }
 
 async function request<T extends BaseResponse>(url: string, method: http.RequestMethod,
-  contentType?: ContentType, data?: object | null): Promise<T> {
+  contentType?: ContentType, data?: object | null, callback?: (http: http.HttpRequest) => void): Promise<T> {
 
+  let request = http.createHttp();
   try {
     // 每一个httpRequest对应一个HTTP请求任务，不可复用
-    let request = http.createHttp();
+    if (callback) {
+      callback(request)
+    }
     const options: http.HttpRequestOptions = {
       method: method, // 可选，默认为http.RequestMethod.GET
       // 当使用POST请求时此字段用于传递请求体内容，具体格式与服务端协商确定
@@ -48,6 +54,7 @@ async function request<T extends BaseResponse>(url: string, method: http.Request
       options.extraData = data || {} as EmptyInterface
       options.header = { 'Content-Type': contentType?.valueOf() || 'application/json' }
     }
+    HttpLogging.print(url, options)
     const resp = await request.request(url, options);
     if (resp.responseCode == 200 && resp.result) {
       const result: T = JSON.parse(resp.result as string) as T
@@ -62,6 +69,8 @@ async function request<T extends BaseResponse>(url: string, method: http.Request
     }
   } catch (e) {
     return Promise.reject(e)
+  } finally {
+    request.destroy()
   }
 }
 
@@ -70,7 +79,12 @@ export class HttpRequest {
     return request(url, http.RequestMethod.GET)
   }
 
-  static async post<T extends BaseResponse>(url: string, data: object | null, contentType?: ContentType): Promise<T> {
-    return request(url, http.RequestMethod.POST, contentType, data)
+  static async post<T extends BaseResponse>(url: string, data: object | null, contentType?: ContentType,
+    callback?: (terminate: Terminator) => void): Promise<T> {
+    return request(url, http.RequestMethod.POST, contentType, data, (http: http.HttpRequest) => {
+      if (callback) {
+        callback(new HttpTerminator(http))
+      }
+    })
   }
 }

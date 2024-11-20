@@ -7,7 +7,7 @@ import {
   PrepareUploadModel,
   StringPair
 } from '../model';
-import { HttpRequest } from '../http';
+import { ContentType, HttpRequest, Terminator } from '../http';
 import { DeviceProvider } from '../utils';
 import { ApiConstant } from '../constant/ApiConstant';
 import { logger, Objects } from 'common';
@@ -15,7 +15,7 @@ import { JSON } from '@kit.ArkTS';
 import { DeviceModel } from '../model/DeviceModel';
 import { UploaderServer } from './upload/UploadServer';
 import { EventBus, EventType, TransferFileProgressEvent } from '../eventbus';
-import { Terminator } from './upload/Terminator';
+import { TransferException } from './upload/TransferException';
 
 const TAG = 'WebClient'
 
@@ -46,7 +46,8 @@ export class WebClient {
       })
   }
 
-  static async prepareUpload(target: DeviceModel, files: Array<FileInfoModel>): Promise<PrepareTransferModel> {
+  static async prepareUpload(target: DeviceModel, files: Array<FileInfoModel>,
+    callback: (term: Terminator) => void): Promise<PrepareTransferModel> {
     if (!target.hostname) {
       return Promise.reject('invalid hostname')
     }
@@ -63,15 +64,17 @@ export class WebClient {
     logger.info(TAG, `--->>> prepare-upload: ${JSON.stringify(body)}`)
     return await HttpRequest.post<PrepareTransferModel>(
       WebClient.getCombinedURL(target.hostname, target.port, ApiConstant.PREPARE_UPLOAD),
-      body
+      body,
+      ContentType.APPLICATION_JSON,
+      callback
     )
   }
 
   static async cancel(target: DeviceModel, sessionId: string): Promise<void> {
     if (!target.hostname) {
-      return Promise.reject('invalid hostname')
+      return Promise.reject()
     }
-    const url = `${WebClient.getCombinedURL(target.hostname, target.port, ApiConstant.PREPARE_UPLOAD)}?sessionId=${sessionId}`
+    const url = `${WebClient.getCombinedURL(target.hostname, target.port, ApiConstant.CANCEL)}?sessionId=${sessionId}`
     HttpRequest.post<BaseResponse>(url, null)
       .then()
       .catch((reason: object) => {
@@ -82,7 +85,7 @@ export class WebClient {
   static async upload(sessionId: string, target: DeviceModel, files: FileInfoModel[], fileTokens: StringPair,
     callback: (terminate: Terminator) => void): Promise<void> {
     if (!target.hostname) {
-      return Promise.reject('invalid hostname')
+      throw new TransferException('invalid hostname')
     }
     const server = new UploaderServer(target.hostname, target.port)
     callback(server)
@@ -90,6 +93,24 @@ export class WebClient {
       for (const pending of files) {
         const url = `${ApiConstant.UPLOAD}?sessionId=${sessionId}&fileId=${pending.id}&token=${fileTokens[pending.id]}`
         await server.upload(url, pending, WebClient.onUploadProgressChanged)
+      }
+    } finally {
+      server.disconnection()
+    }
+  }
+
+  static async uploadFiles(context: Context, sessionId: string, target: DeviceModel, files: FileInfoModel[],
+    fileTokens: StringPair, callback: (terminate: Terminator) => void): Promise<void> {
+    if (!target.hostname) {
+      throw new TransferException('invalid hostname')
+    }
+    const server = new UploaderServer(target.hostname, target.port)
+    callback(server)
+    try {
+      for (const pending of files) {
+        let url = `${ApiConstant.UPLOAD}?sessionId=${sessionId}&fileId=${pending.id}&token=${fileTokens[pending.id]}`
+        url = WebClient.getCombinedURL(target.hostname, target.port, url)
+        await server.createBackgroundTask(context, url, fileTokens[pending.id], pending.filePath!!)
       }
     } finally {
       server.disconnection()

@@ -1,12 +1,11 @@
 import { SizeConstant } from 'common'
-import { FileIcon, IconButton } from '../../components'
+import { FileIcon, IconButton, SingleLineText } from '../../components'
 import { FileInfoModel, FileTransferInfo, FileTransferStatus } from '../../model'
 import { FileProvider } from '../../utils'
 
 @Component
 export struct FileItem {
   @Prop file: FileInfoModel
-  // @Prop status: FileTransferStatus = FileTransferStatus.QUEUE
   @Prop status: FileTransferInfo
   @State isLongPress: boolean = false
 
@@ -20,17 +19,8 @@ export struct FileItem {
 
       Blank().width(SizeConstant.SPACE_M)
       Column() {
-        Text(this.file.fileName)
-          .fontSize(SizeConstant.TEXT_XL)
-          .fontColor($r('app.color.on_container'))
-          .maxLines(1)
+        SingleLineText({ text: this.file.fileName, overflow: this.isLongPress ? TextOverflow.MARQUEE : TextOverflow.Ellipsis })
           .width('100%')
-          .textOverflow({
-            overflow: this.isLongPress ? TextOverflow.MARQUEE : TextOverflow.Ellipsis
-          })
-          .ellipsisMode(EllipsisMode.CENTER)
-          .wordBreak(WordBreak.BREAK_ALL)// 设置断行规则WordBreak.BREAK_ALL后实现字母为单位进行截断
-          .textAlign(TextAlign.Start)
         Blank().height(SizeConstant.SPACE_EXTRA_S)
         if (this.status?.status === FileTransferStatus.TRANSFERRING) {
           Progress({

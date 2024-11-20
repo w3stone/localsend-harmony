@@ -37,8 +37,13 @@ export struct DeviceItem {
           Text(this.device?.deviceModel || "")
             .fontSize(SizeConstant.TEXT_XL)
             .fontColor($r('app.color.on_container'))
-            .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
-            .backgroundColor($r('app.color.container'))
+            .padding({
+              left: SizeConstant.SPACE_M,
+              top: SizeConstant.SPACE_EXTRA_S,
+              right: SizeConstant.SPACE_M,
+              bottom: SizeConstant.SPACE_EXTRA_S
+            })
+            .backgroundColor($r('app.color.background'))
             .borderRadius(SizeConstant.RADIUS_M)
         }
       }
@@ -54,6 +59,6 @@ export struct DeviceItem {
     .margin({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
     .padding(SizeConstant.SPACE_L)
     .borderRadius(SizeConstant.RADIUS_L)
-    .backgroundColor($r('app.color.background'))
+    .backgroundColor($r('app.color.container'))
   }
 }

@@ -1,9 +1,10 @@
 import resmgr from '@ohos.resourceManager';
-import { Strings, getRandomNextNumber } from 'common';
+import { getRandomNextNumber, Objects, Strings } from 'common';
 import { DeviceModel } from '../model/DeviceModel';
 import { util } from '@kit.ArkTS';
-import { Keys, NetAddress } from '../constant';
+import { Keys } from '../constant';
 import { MulticastModel } from '../model';
+import wifiManager from '@ohos.wifiManager';
 
 export class DeviceProvider {
   static REGISTERED_DEVICE_LIST_KEY = "REGISTERED_DEVICE_LIST_KEY"
@@ -27,15 +28,11 @@ export class DeviceProvider {
     const allDevice: DeviceModel[] = AppStorage.get(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) || []
     const key = `device_${hostname}`
     let findIndex = -1
-    for (let i = 0; i < allDevice.length; i++) {
-      if (allDevice[i]!!.key == key) {
-        findIndex = i
-        break
-      }
-    }
+    findIndex = allDevice.findIndex((item: DeviceModel) => item.key === key)
     device.key = key
+    device.hostname = hostname
     if (findIndex > -1) {
-      allDevice[findIndex] = device
+      allDevice[findIndex] = Objects.clone(allDevice[findIndex], device)
     } else {
       allDevice.push(device)
     }
@@ -59,6 +56,18 @@ export class DeviceProvider {
   }
 
   static getCurrentDevice(): DeviceModel {
-    return new MulticastModel(AppStorage.get(Keys.ALIAS)!!, NetAddress.port!!)
+    return new MulticastModel()
+  }
+
+  static getIpv4Address(): string {
+    const ipNumber = wifiManager.getIpInfo().ipAddress
+    if (ipNumber <= 0) {
+      return ""
+    }
+    const ip3 = (ipNumber << 0) >>> 24;
+    const ip2 = (ipNumber << 8) >>> 24;
+    const ip1 = (ipNumber << 16) >>> 24;
+    const ip0 = (ipNumber << 24) >>> 24
+    return ip3 + "." + ip2 + "." + ip1 + "." + ip0
   }
 }

@@ -1,5 +1,5 @@
-import { buffer, util } from "@kit.ArkTS";
-import { logger } from "../../../../Index";
+import { buffer, util } from '@kit.ArkTS';
+import { Context } from '@kit.AbilityKit';
 
 export class Strings {
   private constructor() {
@@ -53,5 +53,9 @@ export class Strings {
       Strings.getSliceByBytes(array, str.slice(subEnd + parseInt((lastCharLen / 2).toFixed())), len)
     }
     return array
+  }
+
+  static getString(context: Context, resourse: Resource): string {
+    return context.resourceManager.getStringSync(resourse)
   }
 }

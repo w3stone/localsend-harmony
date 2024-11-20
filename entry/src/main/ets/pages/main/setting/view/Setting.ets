@@ -1,61 +1,139 @@
-import { NavigationTitle } from '../../../../components';
-import { buffer, util } from '@kit.ArkTS';
-import { FileProvider } from '../../../../utils';
-import { fileIo as fs } from '@kit.CoreFileKit';
+import { SizeConstant } from 'common';
+import { NavigationTitle, SpinnerButton } from '../../../../components';
+import { SettingItem } from './SettingItem';
+import { Keys } from '../../../../constant';
+import { ThemeProvider } from '../../../../theme/ThemeProvider';
+import { ThemeMenu } from './ThemeMenu';
+import { ConfigurationConstant } from '@kit.AbilityKit';
 
 @Component
 export struct Setting {
   @State uuid: string = ''
   @Consume('pages') pages: NavPathStack;
+  @State isShowingServiceInfo: boolean = false
+  @StorageProp(Keys.COLOR_MODE)
+  @Watch('onColorModeChanged')
+  colorMode: ConfigurationConstant.ColorMode = ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET
+
+  onColorModeChanged() {
+    console.info(`onColorModeChanged ->> ${this.colorMode}`)
+  }
 
   build() {
     // 卡片折叠态，展开态的共同父组件
     Stack() {
-      NavigationTitle({ title: $r('app.string.select') }) {
-        Column() {
-          Text(this.uuid)
-          Button('UUID')
-            .onClick(() => {
-              this.uuid = util.generateRandomUUID(true)
-            })
-          Button("跳转到接收文件界面")
-            .onClick(() => {
-              this.pages.pushDestination({ name: 'ReceivingPage' })
-            })
-          Button("读文件")
-            .onClick(() => {
-              this.readeFile().then()
-            })
+      NavigationTitle({
+        title: $r('app.string.select'),
+        isHideBackButton: true,
+        // titleBackgroundColor: $r('app.color.background')
+      }) {
+        Scroll() {
+          Column() {
+            //通用设置
+            Column() {
+              Text($r('app.string.universal'))
+                .fontSize(SizeConstant.TEXT_XXL)
+                .fontColor($r('app.color.on_background'))
+                .padding(SizeConstant.SPACE_M)
+              SettingItem({ text: $r('app.string.theme') }) {
+                SpinnerButton({ text: ThemeProvider.getThemeModelText(this.colorMode) }).bindMenu(ThemeMenu)
+              }
+            }
+            .alignItems(HorizontalAlign.Start)
+            .padding(SizeConstant.SPACE_M)
+            .backgroundColor($r('app.color.container'))
+            .borderRadius(SizeConstant.RADIUS_L)
+
+            Blank().height(SizeConstant.SPACE_L)
+
+            //接收
+            Column() {
+              Text($r('app.string.receive'))
+                .fontSize(SizeConstant.TEXT_XXL)
+                .fontColor($r('app.color.on_background'))
+                .padding(SizeConstant.SPACE_M)
+              SettingItem({ text: $r('app.string.auto_save') }) {
+                Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+
+              SettingItem({ text: $r('app.string.auto_save_favorites_title') }) {
+                Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+
+              SettingItem({ text: $r('app.string.use_pin') }) {
+                Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+
+              SettingItem({ text: $r('app.string.aut_complete') }) {
+                Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+
+              SettingItem({ text: $r('app.string.save_to_history') }) {
+                Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+            }
+            .alignItems(HorizontalAlign.Start)
+            .padding(SizeConstant.SPACE_M)
+            .backgroundColor($r('app.color.container'))
+            .borderRadius(SizeConstant.RADIUS_L)
+
+            Blank().height(SizeConstant.SPACE_L)
+
+            //发送
+            Column() {
+              Text($r('app.string.send'))
+                .fontSize(SizeConstant.TEXT_XXL)
+                .fontColor($r('app.color.on_background'))
+                .padding(SizeConstant.SPACE_M)
+              SettingItem({ text: $r('app.string.auto_receive_link_sharing') }) {
+                Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+            }
+            .alignItems(HorizontalAlign.Start)
+            .padding(SizeConstant.SPACE_M)
+            .backgroundColor($r('app.color.container'))
+            .borderRadius(SizeConstant.RADIUS_L)
+
+            Blank().height(SizeConstant.SPACE_L)
+
+            //网络
+            Column() {
+              Text($r('app.string.network'))
+                .fontSize(SizeConstant.TEXT_XXL)
+                .fontColor($r('app.color.on_background'))
+                .padding(SizeConstant.SPACE_M)
+              SettingItem({ text: $r('app.string.theme') }) {
+                Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+            }
+            .alignItems(HorizontalAlign.Start)
+            .padding(SizeConstant.SPACE_M)
+            .backgroundColor($r('app.color.container'))
+            .borderRadius(SizeConstant.RADIUS_L)
+
+            Blank().height(SizeConstant.SPACE_L)
+
+            //其他
+            Column() {
+              Text($r('app.string.other'))
+                .fontSize(SizeConstant.TEXT_XXL)
+                .fontColor($r('app.color.on_background'))
+                .padding(SizeConstant.SPACE_M)
+              SettingItem({ text: $r('app.string.theme') }) {
+                Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+            }
+            .alignItems(HorizontalAlign.Start)
+            .padding(SizeConstant.SPACE_M)
+            .backgroundColor($r('app.color.container'))
+            .borderRadius(SizeConstant.RADIUS_L)
+          }
+          .constraintSize({ minHeight: '100%' })
+          .padding(SizeConstant.SPACE_L)
         }
         .width('100%')
         .height('100%')
       }
     }
-  }
-
-  async readeFile(): Promise<string> {
-    //文件分片大小 8k
-    const MAX_READ_LENGTH = 8192
-    console.info('开始读取文件')
-    try {
-      const filePath =
-        'file://docs/storage/Users/currentUser/Download/com.huawei.distributedpasteboard/cache/dragdrop/IMG_1729796931417.png'
-      const file = await FileProvider.getFile(filePath)
-      let input = new ArrayBuffer(MAX_READ_LENGTH)
-      let readSize: number = 0
-      let length: number = await fs.read(file.fd, input, { offset: readSize, length: MAX_READ_LENGTH })
-      readSize += length
-      console.info(`input: ${buffer.from(input).toString()}`)
-      while (length > 0) {
-        input = new ArrayBuffer(MAX_READ_LENGTH)
-        length = await fs.read(file.fd, input, { offset: readSize, length: MAX_READ_LENGTH })
-        readSize += length
-        console.info(`input: ${buffer.from(input).toString()}`)
-      }
-      fs.close(file)
-    } catch (e) {
-      console.error(`文件读取失败: ${e.message}\n${e.stack}`)
-    }
-    return ''
   }
 }

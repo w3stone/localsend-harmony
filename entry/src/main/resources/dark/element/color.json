@@ -18,7 +18,7 @@
     },
     {
       "name": "container",
-      "value": "#111111"
+      "value": "#212224"
     },
     {
       "name": "on_container",
@@ -51,6 +51,10 @@
     {
       "name": "card",
       "value": "#3F4759"
+    },
+    {
+      "name": "button_background",
+      "value": "#2C2D2F"
     }
   ]
 }
