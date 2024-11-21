@@ -1,8 +1,8 @@
 import { DeviceProvider } from '.';
 import { Keys } from '../constant';
-import { ThemeModel } from '../theme/ThemeModel';
 import { util } from '@kit.ArkTS';
 import { AutoSaveModel, DeviceType } from '../model';
+import { ConfigurationConstant } from '@kit.AbilityKit';
 
 /**
  * 用于初始化所有需要持久化保存的数据
@@ -11,7 +11,7 @@ export class PersistentStorageProvider {
   static init(context: Context) {
     //主题：默认跟随系统
     if (AppStorage.get(Keys.COLOR_MODE) == undefined) {
-      PersistentStorage.persistProp(Keys.COLOR_MODE, ThemeModel.FLOW_SYSTEM)
+      PersistentStorage.persistProp(Keys.COLOR_MODE, ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET)
     }
     //PIN：默认不开启PIN
     if (AppStorage.get(Keys.USE_PIN_WHEN_RECEIVE) == undefined) {

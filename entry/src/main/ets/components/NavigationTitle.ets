@@ -44,6 +44,7 @@ export struct NavigationTitle {
     .width('100%')
     .height('100%')
     .padding({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
+    .backgroundColor(this.titleBackgroundColor)
   }
 
   build() {
