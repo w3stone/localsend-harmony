@@ -1,8 +1,6 @@
 import { MainPage } from './main';
 import { TransferPage } from './transfer/TransferPage';
 import { Routers } from '../utils';
-import { ThemeControl } from '@kit.ArkUI';
-import { DefaultThemes } from '../theme/DefaultColors';
 import { HistoryPage } from './history/HistoryPage';
 import { Keys } from '../constant';
 import { ConfigurationConstant } from '@kit.AbilityKit';
@@ -30,7 +28,7 @@ struct Index {
     Navigation(this.pages) {
       MainPage()
     }
-    .mode(NavigationMode.Auto)
+    .mode(NavigationMode.Stack)
     .size({ width: '100%', height: '100%' })
     .hideToolBar(true)
     .backgroundColor($r('app.color.container'))
@@ -42,7 +40,6 @@ struct Index {
   }
 
   onColorModelChanged() {
-    ThemeControl.setDefaultTheme(new DefaultThemes())
     getContext(this).getApplicationContext().setColorMode(this.colorMode);
   }
 }

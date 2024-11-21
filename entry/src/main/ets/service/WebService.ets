@@ -65,7 +65,7 @@ export class WebService {
       logger.info(TAG, `---<<< UDP  -> listening`);
     })
     udp.on('close', () => {
-      logger.info(TAG, `---<<< UDP  -> listening`);
+      logger.info(TAG, `---<<< UDP  -> close`);
     })
     udp.on('message', (info: socket.SocketMessageInfo) => {
       let message = Strings.buf2String(info.message)
@@ -85,7 +85,11 @@ export class WebService {
       .post("/api/localsend/v2/cancel", this.cancel)
       .post("/api/localsend/v2/download", this.cancel)
       .listen(this.port, "0.0.0.0")
-    this.scanOtherDevice()
+      .then((isRunning: boolean) => {
+        AppStorage.setOrCreate(Keys.SERVICE_IS_ONLINE, isRunning)
+        this.isRunning = isRunning
+        this.scanOtherDevice()
+      })
   }
 
   async stop(): Promise<void> {
@@ -97,6 +101,8 @@ export class WebService {
       await udp.close()
     } catch (e) {
       logger.warn(TAG, `WebService stop error: ${Errors.getErrorMessage(e)}`)
+    } finally {
+      AppStorage.set(Keys.SERVICE_IS_ONLINE, false)
     }
   }
 

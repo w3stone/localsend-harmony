@@ -15,6 +15,26 @@ export class Keys {
    */
   static COLOR_MODE = 'COLOR_MODE'
   /**
+   * 接收时开启PIN码 string
+   */
+  static USE_PIN_WHEN_RECEIVE = 'USE_PIN_WHEN_RECEIVE'
+  /**
+   * WebService已开启 bool
+   */
+  static SERVICE_IS_ONLINE = 'SERVICE_IS_ONLINE'
+  /**
+   * 设备类型
+   */
+  static DEVICE_TYPE = 'DEVICE_TYPE'
+  /**
+   * 设备型号
+   */
+  static DEVICE_MODE = 'DEVICE_MODE'
+  /**
+   * UDP组播地址
+   */
+  static MULTICAST_ADDRESS = 'MULTICAST_ADDRESS'
+  /**
    * 当前是否正处于文件传输状态
    * value = [boolean]
    */

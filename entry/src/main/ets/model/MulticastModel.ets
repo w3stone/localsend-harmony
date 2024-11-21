@@ -11,8 +11,8 @@ export class MulticastModel extends DeviceModel {
     super.port = AppStorage.get(Keys.PORT) || 53317
     super.announce = announce
     super.fingerprint = DeviceProvider.getDeviceFingerprint()
-    super.deviceModel = 'HarmonyOS'
-    super.deviceType = 'mobile' // mobile | desktop | web | headless | server, nullable
+    super.deviceModel = AppStorage.get(Keys.DEVICE_MODE) || 'HarmonyOS'
+    super.deviceType = AppStorage.get(Keys.DEVICE_TYPE) || 'mobile' // mobile | desktop | web | headless | server, nullable
     super.protocol = "http" // http | https
     super.download = false // if download API (section 5.2, 5.3) is active (optional, default: false)
     super.announce = announce

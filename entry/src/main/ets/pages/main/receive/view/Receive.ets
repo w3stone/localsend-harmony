@@ -1,12 +1,13 @@
 import { logger, Screens, SizeConstant } from 'common';
 import { WebService } from '../../../../service';
 import { Routers } from '../../../../utils';
-import { EventBus, EventType } from '../../../../eventbus';
+import { EventBus, EventType, NumberEventData } from '../../../../eventbus';
 import { Icon } from '../../../../components';
 import { Keys } from '../../../../constant';
-import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
-import { AutoSaveModel } from '../../../../model';
+import { AutoSaveModel, ServiceActionType } from '../../../../model';
 import { ServiceInfo } from './ServiceInfo';
+import { DialogProvider } from '../../../../utils/DialogProvider';
+import { emitter } from '@kit.BasicServicesKit';
 
 const service = new WebService(AppStorage.get<string>(Keys.ALIAS) || "Unknown Name")
 
@@ -16,6 +17,8 @@ export struct Receive {
   @StorageProp(Keys.ALIAS) alias: string = ""
   @StorageLink(Keys.AUTO_SAVE_MODEL) autoSaveModel: AutoSaveModel = AutoSaveModel.CLOSE
   @State isShowingServiceInfo: boolean = false
+  @StorageProp(Keys.SERVICE_IS_ONLINE) @Watch('onServiceOnlineChanged') isOnline: boolean | undefined = undefined
+  @State logoAnim: RotateOptions = { angle: '0deg' }
 
   @Builder
   ServiceInfoPop() {
@@ -55,19 +58,19 @@ export struct Receive {
       })
       .justifyContent(FlexAlign.End)
 
-      Icon({ src: $r('app.media.logo'), dimension: 256 })
-        .transition(TransitionEffect.rotate({ angle: '360deg' })
-          .animation({
-            duration: 15000,
-            iterations: -1,
-            curve: Curve.Linear
-          }))
+      Icon({ src: $r('app.media.logo'), dimension: 256 }).rotate(this.logoAnim)
       Text(this.alias || "")
         .fontSize(36)
         .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.on_container'))
         .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
-
+      if (this.isOnline === false) {
+        Text($r('app.string.offline'))
+          .fontSize(24)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.on_container'))
+          .margin({ top: SizeConstant.SPACE_L })
+      }
       Blank().layoutWeight(1)
 
       Text($r('app.string.auto_save'))
@@ -113,7 +116,7 @@ export struct Receive {
           $r('app.color.on_container_secondary'))
           .backgroundColor(this.autoSaveModel == AutoSaveModel.FAVORITES ? $r('app.color.primary') : Color.Transparent)
           .onClick(() => {
-            this.setAutoSaveTips(AutoSaveModel.FAVORITES)
+            DialogProvider.setAutoSaveTips(AutoSaveModel.FAVORITES)
           })
         Text($r('app.string.opened'))
           .fontSize(SizeConstant.TEXT_L)
@@ -130,7 +133,7 @@ export struct Receive {
           $r('app.color.on_container_secondary'))
           .backgroundColor(this.autoSaveModel == AutoSaveModel.ALL ? $r('app.color.primary') : Color.Transparent)
           .onClick(() => {
-            this.setAutoSaveTips(AutoSaveModel.ALL)
+            DialogProvider.setAutoSaveTips(AutoSaveModel.ALL)
           })
       }
 
@@ -139,38 +142,6 @@ export struct Receive {
     .size({ width: '100%', height: '100%' })
     .padding({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
     .backgroundColor($r('app.color.background'))
-
-    // .bindPopup(this.isShowingServiceInfo, {
-    //   builder: this.ServiceInfoPop()
-    // })
-  }
-
-  setAutoSaveTips(model: AutoSaveModel) {
-    let title: ResourceStr
-    let message: ResourceStr
-    if (model == AutoSaveModel.FAVORITES) {
-      title = $r('app.string.auto_save_favorites_title')
-      message = $r('app.string.auto_save_favorites_tips')
-    } else if (model == AutoSaveModel.ALL) {
-      title = $r('app.string.auto_save')
-      message = $r('app.string.auto_save_all_tips')
-    } else {
-      return
-    }
-    DialogHelper.showAlertDialog({
-      title: title,
-      content: message,
-      primaryButton: {
-        value: $r('app.string.cancel'),
-        fontColor: $r('app.color.on_container_secondary'),
-      },
-      secondaryButton: $r('app.string.positive'),
-      onAction: (action) => {
-        if (action == DialogAction.TWO) {
-          this.autoSaveModel = model
-        }
-      }
-    })
   }
 
   aboutToAppear(): void {
@@ -179,6 +150,34 @@ export struct Receive {
       logger.info('ReceivePage', 'receive event: scanning device')
       service.scanOtherDevice()
     })
+    EventBus.getInstance().on(EventType.SERVICE_ACTION, (event: emitter.EventData) => {
+      const data: NumberEventData = event.data as NumberEventData
+      switch (data.value) {
+        case ServiceActionType.Start:
+          service.start(AppStorage.get(Keys.PORT))
+          break
+        case ServiceActionType.Stop:
+          service.stop()
+          break
+        case ServiceActionType.Restart:
+          service.stop().then(() => {
+            service.start(AppStorage.get(Keys.PORT))
+          })
+          break
+      }
+    })
+  }
+
+  onServiceOnlineChanged() {
+    if (this.isOnline) {
+      animateTo({ duration: 15000, iterations: -1, curve: Curve.Linear }, () => {
+        this.logoAnim = { angle: '360deg' }
+      })
+    } else {
+      animateTo({ duration: 0, iterations: 1, curve: Curve.Linear }, () => {
+        this.logoAnim = { angle: '0deg' }
+      })
+    }
   }
 
   onBackPress(): boolean | void {
@@ -188,5 +187,6 @@ export struct Receive {
   aboutToDisappear(): void {
     service.stop()
     EventBus.getInstance().unregister(EventType.SCAN_DEVICE)
+    EventBus.getInstance().unregister(EventType.SERVICE_ACTION)
   }
 }

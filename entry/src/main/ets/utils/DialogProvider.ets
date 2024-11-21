@@ -1,5 +1,7 @@
-import { DialogHelper } from '@pura/harmony-dialog';
+import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
 import { common } from '@kit.AbilityKit';
+import { AutoSaveModel } from '../model';
+import { Keys } from '../constant';
 
 export class DialogProvider {
   private constructor() {
@@ -43,5 +45,37 @@ export class DialogProvider {
       config.toast_duration = 2000; //显示时长(1500ms-10000ms)
       config.toast_durationLong = 10000; //显示时长(10000ms)
     });
+  }
+
+  static setAutoSaveTips(model: AutoSaveModel, onCancel?: () => void) {
+    let title: ResourceStr
+    let message: ResourceStr
+    if (model == AutoSaveModel.FAVORITES) {
+      title = $r('app.string.auto_save_favorites_title')
+      message = $r('app.string.auto_save_favorites_tips')
+    } else if (model == AutoSaveModel.ALL) {
+      title = $r('app.string.auto_save')
+      message = $r('app.string.auto_save_all_tips')
+    } else {
+      return
+    }
+    DialogHelper.showAlertDialog({
+      title: title,
+      content: message,
+      primaryButton: {
+        value: $r('app.string.cancel'),
+        fontColor: $r('app.color.on_container_secondary'),
+      },
+      secondaryButton: $r('app.string.positive'),
+      onAction: (action) => {
+        if (action == DialogAction.ONE) {
+          if (onCancel) {
+            onCancel()
+          }
+        } else if (action == DialogAction.TWO) {
+          AppStorage.set(Keys.AUTO_SAVE_MODEL, model)
+        }
+      }
+    })
   }
 }

@@ -1,6 +1,7 @@
 import { Keys } from '../constant';
 import { ConfigurationConstant } from '@kit.AbilityKit';
-import { window } from '@kit.ArkUI';
+import { ThemeControl, window } from '@kit.ArkUI';
+import { DefaultThemes } from './DefaultColors';
 
 export class ThemeProvider {
   static setThemeModel(model: ConfigurationConstant.ColorMode) {
@@ -41,6 +42,7 @@ export class ThemeProvider {
         statusBarContentColor: isDark ? "#D1D1D1" : "#171717",
       };
       mainWin.setWindowSystemBarProperties(props);
+      ThemeControl.setDefaultTheme(new DefaultThemes())
     }
   }
 

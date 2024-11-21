@@ -189,12 +189,20 @@
       "value": "继续"
     },
     {
-      "name": "alias",
+      "name": "alias_text",
       "value": "别名："
     },
     {
-      "name": "port",
+      "name": "port_text",
       "value": "端口："
+    },
+    {
+      "name": "port",
+      "value": "端口"
+    },
+    {
+      "name": "offline",
+      "value": "离线"
     },
     {
       "name": "auto_save",
@@ -323,6 +331,18 @@
     {
       "name": "service",
       "value": "服务器"
+    },
+    {
+      "name": "service_offline",
+      "value": "服务器（离线）"
+    },
+    {
+      "name": "alias",
+      "value": "别名"
+    },
+    {
+      "name": "network_changed_tips",
+      "value": "重启服务器后生效！"
     },
     {
       "name": "device_type",

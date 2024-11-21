@@ -117,6 +117,7 @@ export struct MainPage {
     .barMode(BarMode.Fixed)
     .barBackgroundColor($r('app.color.container'))
     .height('100%')
+    .width('100%')
     .padding({ bottom: Screens.getNavigationBarHeight() })
     .onChange((index) => {
       this.currentTabIndex = index

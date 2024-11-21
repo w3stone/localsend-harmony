@@ -58,4 +58,15 @@ export class Strings {
   static getString(context: Context, resourse: Resource): string {
     return context.resourceManager.getStringSync(resourse)
   }
+
+  static isEmpty(str: string | null | undefined): boolean {
+    if (str == null || str == undefined) {
+      return true
+    }
+    return str.length == 0
+  }
+
+  static isNotEmpty(str: string | null | undefined): boolean {
+    return !Strings.isEmpty(str)
+  }
 }

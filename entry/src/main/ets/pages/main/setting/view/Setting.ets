@@ -1,10 +1,16 @@
-import { SizeConstant } from 'common';
-import { NavigationTitle, SpinnerButton } from '../../../../components';
+import { SizeConstant, Strings, toast } from 'common';
+import { NavigationTitle, SpinnerButton, ToggleButton, ToggleSwitchedEvent } from '../../../../components';
 import { SettingItem } from './SettingItem';
 import { Keys } from '../../../../constant';
 import { ThemeProvider } from '../../../../theme/ThemeProvider';
 import { ThemeMenu } from './ThemeMenu';
 import { ConfigurationConstant } from '@kit.AbilityKit';
+import { AutoSaveModel } from '../../../../model';
+import { DialogProvider } from '../../../../utils';
+import { ServiceAction } from './ServiceAction';
+import { AliasAction } from './AliasAction';
+import { InputAction } from './InputAction';
+import { DeviceTypeAction } from './DeviceTypeAction';
 
 @Component
 export struct Setting {
@@ -12,21 +18,19 @@ export struct Setting {
   @Consume('pages') pages: NavPathStack;
   @State isShowingServiceInfo: boolean = false
   @StorageProp(Keys.COLOR_MODE)
-  @Watch('onColorModeChanged')
   colorMode: ConfigurationConstant.ColorMode = ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET
-
-  onColorModeChanged() {
-    console.info(`onColorModeChanged ->> ${this.colorMode}`)
-  }
+  @StorageLink(Keys.AUTO_SAVE_MODEL) autoSaveModel: AutoSaveModel = AutoSaveModel.CLOSE
+  @StorageLink(Keys.USE_PIN_WHEN_RECEIVE) pin: string | undefined = undefined
+  @StorageLink(Keys.SERVICE_IS_ONLINE) @Watch('onLineChanged') isOnline: boolean = true
+  @State networkTips: ResourceStr | null = null
+  @StorageLink(Keys.DEVICE_MODE) deviceMode: string = ''
+  @State port: string = `${AppStorage.get(Keys.PORT)}`
+  @StorageLink(Keys.MULTICAST_ADDRESS) multicast: string = ''
 
   build() {
     // 卡片折叠态，展开态的共同父组件
     Stack() {
-      NavigationTitle({
-        title: $r('app.string.select'),
-        isHideBackButton: true,
-        // titleBackgroundColor: $r('app.color.background')
-      }) {
+      NavigationTitle({ title: $r('app.string.setting'), isHideBackButton: true }) {
         Scroll() {
           Column() {
             //通用设置
@@ -53,23 +57,65 @@ export struct Setting {
                 .fontColor($r('app.color.on_background'))
                 .padding(SizeConstant.SPACE_M)
               SettingItem({ text: $r('app.string.auto_save') }) {
-                Toggle({ type: ToggleType.Switch, isOn: true })
+                ToggleButton({
+                  isOn: this.autoSaveModel === AutoSaveModel.ALL,
+                  onToggleSwitched: (event: ToggleSwitchedEvent, isFromUser: boolean) => {
+                    if (event.isOn && isFromUser) {
+                      DialogProvider.setAutoSaveTips(AutoSaveModel.ALL, () => {
+                        event.off()
+                      })
+                    }
+                  }
+                })
               }
 
               SettingItem({ text: $r('app.string.auto_save_favorites_title') }) {
-                Toggle({ type: ToggleType.Switch, isOn: true })
+                ToggleButton({
+                  isOn: this.autoSaveModel === AutoSaveModel.FAVORITES,
+                  onToggleSwitched: (event: ToggleSwitchedEvent, isFromUser: boolean) => {
+                    if (event.isOn && isFromUser) {
+                      DialogProvider.setAutoSaveTips(AutoSaveModel.FAVORITES, () => {
+                        event.off()
+                      })
+                    }
+                  }
+                })
               }
 
               SettingItem({ text: $r('app.string.use_pin') }) {
-                Toggle({ type: ToggleType.Switch, isOn: true })
+                ToggleButton({
+                  isOn: Strings.isNotEmpty(this.pin),
+                  onToggleSwitched: (event: ToggleSwitchedEvent, isFromUser: boolean) => {
+                    if (event.isOn && isFromUser) {
+                      toast.show('暂时不支持PIN')
+                      event.off()
+                    }
+                  }
+                })
               }
 
               SettingItem({ text: $r('app.string.aut_complete') }) {
-                Toggle({ type: ToggleType.Switch, isOn: true })
+                ToggleButton({
+                  isOn: false,
+                  onToggleSwitched: (event: ToggleSwitchedEvent, isFromUser: boolean) => {
+                    if (event.isOn && isFromUser) {
+                      toast.show('待实现')
+                      event.off()
+                    }
+                  }
+                })
               }
 
               SettingItem({ text: $r('app.string.save_to_history') }) {
-                Toggle({ type: ToggleType.Switch, isOn: true })
+                ToggleButton({
+                  isOn: false,
+                  onToggleSwitched: (event: ToggleSwitchedEvent, isFromUser: boolean) => {
+                    if (event.isOn && isFromUser) {
+                      toast.show('待实现')
+                      event.off()
+                    }
+                  }
+                })
               }
             }
             .alignItems(HorizontalAlign.Start)
@@ -86,7 +132,15 @@ export struct Setting {
                 .fontColor($r('app.color.on_background'))
                 .padding(SizeConstant.SPACE_M)
               SettingItem({ text: $r('app.string.auto_receive_link_sharing') }) {
-                Toggle({ type: ToggleType.Switch, isOn: true })
+                ToggleButton({
+                  isOn: false,
+                  onToggleSwitched: (event: ToggleSwitchedEvent, isFromUser: boolean) => {
+                    if (event.isOn && isFromUser) {
+                      toast.show('待实现')
+                      event.off()
+                    }
+                  }
+                })
               }
             }
             .alignItems(HorizontalAlign.Start)
@@ -102,8 +156,59 @@ export struct Setting {
                 .fontSize(SizeConstant.TEXT_XXL)
                 .fontColor($r('app.color.on_background'))
                 .padding(SizeConstant.SPACE_M)
-              SettingItem({ text: $r('app.string.theme') }) {
-                Toggle({ type: ToggleType.Switch, isOn: true })
+              if (this.networkTips) {
+                Text(this.networkTips)
+                  .fontSize(SizeConstant.TEXT_L)
+                  .fontColor($r('app.color.warn'))
+                  .padding(SizeConstant.SPACE_M)
+              }
+              SettingItem({ text: this.isOnline ? $r('app.string.service') : $r('app.string.service_offline') }) {
+                ServiceAction()
+              }
+
+              SettingItem({ text: $r("app.string.alias") }) {
+                AliasAction({
+                  onChanged: () => {
+                    this.onServiceConfigChanged()
+                  }
+                })
+              }
+
+              SettingItem({ text: $r("app.string.device_type") }) {
+                DeviceTypeAction({
+                  onDeviceTypeChanged: () => {
+                    this.onServiceConfigChanged()
+                  }
+                })
+              }
+
+              SettingItem({ text: $r("app.string.device_model") }) {
+                InputAction({
+                  value: this.deviceMode,
+                  onChanged: () => {
+                    this.onServiceConfigChanged()
+                  }
+                })
+              }
+
+              SettingItem({ text: $r("app.string.port") }) {
+                InputAction({
+                  value: this.port,
+                  inputType: InputType.Number,
+                  onChanged: () => {
+                    AppStorage.set(Keys.PORT, this.port)
+                    this.onServiceConfigChanged()
+                  }
+                })
+              }
+
+              SettingItem({ text: $r("app.string.multicast") }) {
+                InputAction({
+                  value: this.multicast,
+                  onChanged: () => {
+                    this.onServiceConfigChanged()
+                  }
+                })
               }
             }
             .alignItems(HorizontalAlign.Start)
@@ -135,5 +240,15 @@ export struct Setting {
         .height('100%')
       }
     }
+  }
+
+  onLineChanged() {
+    if (this.networkTips != null) {
+      this.networkTips = null
+    }
+  }
+
+  onServiceConfigChanged() {
+    this.networkTips = $r('app.string.network_changed_tips')
   }
 }

@@ -1,9 +1,10 @@
 import { Icon } from '.';
+import { DeviceType } from '../model';
 
 @Component
 export struct DeviceIcon {
   @Prop iconColor: ResourceColor = $r('app.color.icon')
-  @Prop deviceType: string | 'mobile' | 'desktop' | 'web' | 'headless' | 'server' = 'web'
+  @Prop deviceType: DeviceType = 'web'
   @Prop dimension: Length = 60
 
   build() {

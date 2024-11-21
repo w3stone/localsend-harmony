@@ -16,4 +16,8 @@ export class EventType {
    * 文件传输进度更新事件
    */
   static TRANSFER_PROGRESS_CHANGED_ACTION = 5
+  /**
+   * 文件服务: ServiceAction
+   */
+  static SERVICE_ACTION = 6
 }

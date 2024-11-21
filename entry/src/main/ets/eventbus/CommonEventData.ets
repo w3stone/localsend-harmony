@@ -1,11 +1,18 @@
 import { emitter } from '@kit.BasicServicesKit'
 import { PrepareUploadModel, ReceiveResultAction, TransferProgressChangedAction } from '../model'
 
-@Sendable
-export class ValueEventData<T> {
-  value: T
+export class ValueEventData {
+  value: object
 
-  constructor(value: T) {
+  constructor(value: object) {
+    this.value = value
+  }
+}
+
+export class NumberEventData {
+  value: number
+
+  constructor(value: number) {
     this.value = value
   }
 }
@@ -21,9 +28,15 @@ export class ValueEventData<T> {
  * @param value
  * @returns
  */
-export function ValueEvent<T>(value: T): emitter.EventData {
+export function ValueEvent(value: object): emitter.EventData {
   return {
     data: new ValueEventData(value)
+  }
+}
+
+export function NumberEvent(value: number): emitter.EventData {
+  return {
+    data: new NumberEventData(value)
   }
 }
 

@@ -10,7 +10,7 @@ export struct ServiceInfo {
 
   build() {
     RelativeContainer() {
-      Text($r('app.string.alias'))
+      Text($r("app.string.alias_text"))
         .fontSize(SizeConstant.TEXT_L)
         .fontColor($r('app.color.on_background'))
         .id('alias_text')
@@ -47,7 +47,7 @@ export struct ServiceInfo {
           left: { anchor: "alias_value", align: HorizontalAlign.Start },
         })
         .id('ip_value')
-      Text($r('app.string.port'))
+      Text($r("app.string.port_text"))
         .fontSize(SizeConstant.TEXT_L)
         .fontColor($r('app.color.on_background'))
         .alignRules({

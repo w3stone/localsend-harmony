@@ -59,7 +59,7 @@ export struct FileInfomation {
         .fontColor($r('app.color.on_background'))
         .id('file_size_text')
         .alignRules({
-          left: { anchor: "file_path_text", align: HorizontalAlign.Start },
+          left: { anchor: "file_name_text", align: HorizontalAlign.Start },
           top: { anchor: "file_path_text", align: VerticalAlign.Bottom }
         })
         .lineHeight(lineHeight)
@@ -78,6 +78,10 @@ export struct FileInfomation {
         .fontSize(SizeConstant.TEXT_L)
         .fontColor($r('app.color.on_background'))
         .id('sender_text')
+        .alignRules({
+          left: { anchor: "file_name_text", align: HorizontalAlign.Start },
+          top: { anchor: "file_size_text", align: VerticalAlign.Bottom }
+        })
         .lineHeight(lineHeight)
       SingleLineText({
         text: this.data.sender,
@@ -97,7 +101,7 @@ export struct FileInfomation {
         .fontColor($r('app.color.on_background'))
         .id('time_text')
         .alignRules({
-          left: { anchor: "sender_text", align: HorizontalAlign.Start },
+          left: { anchor: "file_name_text", align: HorizontalAlign.Start },
           top: { anchor: "sender_text", align: VerticalAlign.Bottom }
         })
         .lineHeight(lineHeight)

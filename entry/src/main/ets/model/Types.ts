@@ -26,3 +26,5 @@ export interface StringPair {
 export interface StringNumberPair {
   [key: string]: number
 }
+
+export type DeviceType = string | 'mobile' | 'desktop' | 'web' | 'headless' | 'server'

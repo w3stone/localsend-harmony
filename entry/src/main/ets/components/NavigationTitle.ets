@@ -58,6 +58,7 @@ export struct NavigationTitle {
     .hideBackButton(this.isHideBackButton)
     .padding({ top: Screens.getStatusBarHeight() })
     .backgroundColor(this.titleBackgroundColor)
+    .mode(NavigationMode.Stack)
   }
 }
 
