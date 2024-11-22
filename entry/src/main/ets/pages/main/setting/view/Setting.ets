@@ -6,7 +6,7 @@ import { ThemeProvider } from '../../../../theme/ThemeProvider';
 import { ThemeMenu } from './ThemeMenu';
 import { ConfigurationConstant } from '@kit.AbilityKit';
 import { AutoSaveModel } from '../../../../model';
-import { DialogProvider } from '../../../../utils';
+import { DialogProvider, Routers } from '../../../../utils';
 import { ServiceAction } from './ServiceAction';
 import { AliasAction } from './AliasAction';
 import { InputAction } from './InputAction';
@@ -224,8 +224,15 @@ export struct Setting {
                 .fontSize(SizeConstant.TEXT_XXL)
                 .fontColor($r('app.color.on_background'))
                 .padding(SizeConstant.SPACE_M)
-              SettingItem({ text: $r('app.string.theme') }) {
+              SettingItem({ text: $r('app.string.about') }) {
                 Toggle({ type: ToggleType.Switch, isOn: true })
+              }
+
+              SettingItem({ text: '开发者工具' }) {
+                Button('打开', { buttonStyle: ButtonStyleMode.TEXTUAL })
+                  .onClick(() => {
+                    this.pages.pushDestination({name: Routers.DEVELOPER_TOOLS})
+                  })
               }
             }
             .alignItems(HorizontalAlign.Start)

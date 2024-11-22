@@ -23,7 +23,7 @@ export class PersistentStorageProvider {
     }
     //设备类型
     if (AppStorage.get(Keys.DEVICE_TYPE) == undefined) {
-      PersistentStorage.persistProp<DeviceType>(Keys.DEVICE_TYPE, 'web')
+      PersistentStorage.persistProp<DeviceType>(Keys.DEVICE_TYPE, 'desktop')
     }
     //设备型号
     if (AppStorage.get(Keys.DEVICE_MODE) == undefined) {

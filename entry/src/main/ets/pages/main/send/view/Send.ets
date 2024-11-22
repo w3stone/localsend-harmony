@@ -1,5 +1,11 @@
-import { logger, SizeConstant, toast } from 'common';
-import { Icon, NavigationTitle, SendRequestDialog } from '../../../../components';
+import { logger, SizeConstant, Strings, toast } from 'common';
+import {
+  Icon,
+  NavigationTitle,
+  PasteboardAuthorizeDialog,
+  PasteboardAuthorizeDialogOptions,
+  SendRequestDialog
+} from '../../../../components';
 import { DeviceModel } from '../../../../model/DeviceModel';
 import { DeviceProvider } from '../../../../utils/DeviceProvider';
 import { EventBus, EventType } from '../../../../eventbus';
@@ -10,13 +16,12 @@ import { SelectedFiles } from './SelctedFiles';
 import { FileProvider, ObservedArray } from '../../../../utils';
 import { FileInfoModel } from '../../../../model';
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
-import { JSON } from '@kit.ArkTS';
+import { pasteboard } from '@kit.BasicServicesKit';
 
 @Component
 export struct Send {
   @StorageLink(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) allDevice: DeviceModel[] = []
   @State selectedFiles: ObservedArray<FileInfoModel> = []
-  @State send: ObservedArray<FileInfoModel> = []
   @State toDevice: DeviceModel | null = null
   mSendFileRequestDialog: CustomDialogController | null = new CustomDialogController({
     width: '100%',
@@ -30,6 +35,7 @@ export struct Send {
       target: this.toDevice,
     }),
   })
+  mPasteboardAuthorizeDialogId: string | null = null
 
   build() {
     NavigationTitle({ title: $r('app.string.select'), isHideBackButton: true }) {
@@ -37,13 +43,6 @@ export struct Send {
         if (this.selectedFiles && this.selectedFiles.length > 0) {
           SelectedFiles({
             files: this.selectedFiles,
-            onCloseClick: () => {
-              toast.show('clear')
-              this.selectedFiles = []
-            },
-            onEditClick: () => {
-
-            },
             onAppendClick: () => {
               this.addSelectFile()
             }
@@ -73,10 +72,11 @@ export struct Send {
             SelectorButton({ text: $r('app.string.clipboard'), icon: $r('app.media.ic_clipboard') })
               .layoutWeight(1)
               .onClick(() => {
-                toast.show("发送文件")
+                this.onSendFromPasteboard()
               })
           }
           .width('100%')
+          .height('auto')
         }
 
         //附近设备
@@ -117,29 +117,25 @@ export struct Send {
         //设备列表
         if (this.allDevice.length > 0) {
           List() {
-            ForEach(
-              this.allDevice,
-              (item: DeviceModel) => {
-                ListItem() {
-                  DeviceItem({ device: item })
-                    .onClick(() => {
-                      if (!this.selectedFiles || this.selectedFiles.length == 0) {
-                        DialogHelper.showAlertDialog({
-                          title: $r('app.string.unselected_file'),
-                          content: $r('app.string.unselected_file_text'),
-                          secondaryButton: $r('app.string.close'),
-                          onAction: () => {
-                          },
-                        })
-                      } else {
-                        this.toDevice = item
-                        this.mSendFileRequestDialog?.open()
-                      }
-                    })
-                }
-              },
-              (item: DeviceModel, index: number) => `${item.key}_${index}`
-            )
+            ForEach(this.allDevice, (item: DeviceModel) => {
+              ListItem() {
+                DeviceItem({ device: item })
+                  .onClick(() => {
+                    if (!this.selectedFiles || this.selectedFiles.length == 0) {
+                      DialogHelper.showAlertDialog({
+                        title: $r('app.string.unselected_file'),
+                        content: $r('app.string.unselected_file_text'),
+                        secondaryButton: $r('app.string.close'),
+                        onAction: () => {
+                        },
+                      })
+                    } else {
+                      this.toDevice = item
+                      this.mSendFileRequestDialog?.open()
+                    }
+                  })
+              }
+            }, (item: DeviceModel, index: number) => `${item.key}_${index}`)
           }
           .listDirection(Axis.Vertical)
           .width('100%')
@@ -177,9 +173,37 @@ export struct Send {
       onAction: (action: DialogAction, _: string, content: string) => {
         if (action == DialogAction.TWO) {
           this.selectedFiles.push(...FileProvider.createTextMessages(content))
-          logger.info('Send', `selected: ${JSON.stringify(this.selectedFiles)}`)
         }
       }
     })
+  }
+
+  onSendFromPasteboard() {
+    this.mPasteboardAuthorizeDialogId = DialogHelper.showCustomDialog<PasteboardAuthorizeDialogOptions>(
+      wrapBuilder(PasteboardAuthorizeDialog),
+      {
+        uiContext: this.getUIContext(),
+        onAction: (action: DialogAction) => {
+          if (action === DialogAction.ONE && this.mPasteboardAuthorizeDialogId != null) {
+            DialogHelper.closeDialog(this.mPasteboardAuthorizeDialogId)
+          }
+        },
+        onAuthorized: () => {
+          if (this.mPasteboardAuthorizeDialogId != null) {
+            DialogHelper.closeDialog(this.mPasteboardAuthorizeDialogId)
+          }
+          let clipboard: pasteboard.SystemPasteboard = pasteboard.getSystemPasteboard();
+          clipboard.getData()
+            .then((pasteData: pasteboard.PasteData) => {
+              let text: string = pasteData.getPrimaryText();
+              if (Strings.isEmpty(text)) {
+                toast.show($r('app.string.clipboard_nodata'))
+                return
+              }
+              this.selectedFiles.push(...FileProvider.createTextMessages(text))
+            })
+        },
+      }
+    )
   }
 }

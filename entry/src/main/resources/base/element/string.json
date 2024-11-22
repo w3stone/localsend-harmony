@@ -45,6 +45,22 @@
       "value": "剪切板"
     },
     {
+      "name": "delete_all",
+      "value": "删除全部"
+    },
+    {
+      "name": "clipboard_permission_tips",
+      "value": "由于系统限制，为了保护你的隐私安全，请点击下方\"粘贴\"按钮，以授权APP临时读取剪切板内容"
+    },
+    {
+      "name": "clipboard_permission_failed",
+      "value": "获取临时授权失败，无法读取剪切板数据"
+    },
+    {
+      "name": "clipboard_nodata",
+      "value": "当前剪切板无内容"
+    },
+    {
       "name": "nearby_devices",
       "value": "附近的设备"
     },
@@ -53,7 +69,7 @@
       "value": "文件: %d"
     },
     {
-      "name": "size_of_files",
+      "name": "size_text",
       "value": "大小: %s"
     },
     {
@@ -142,11 +158,23 @@
     },
     {
       "name": "total_progress",
-      "value": "总进度(%s)"
+      "value": "总进度（%s）"
+    },
+    {
+      "name": "file_of_numbers",
+      "value": "文件: %s"
+    },
+    {
+      "name": "speed_text",
+      "value": "速度: %s"
     },
     {
       "name": "advanced",
       "value": "高级"
+    },
+    {
+      "name": "hide",
+      "value": "隐藏"
     },
     {
       "name": "cancel",

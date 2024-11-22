@@ -170,11 +170,11 @@ export struct Receive {
 
   onServiceOnlineChanged() {
     if (this.isOnline) {
-      animateTo({ duration: 15000, iterations: -1, curve: Curve.Linear }, () => {
+      this.getUIContext().animateTo({ duration: 15000, iterations: -1, curve: Curve.Linear }, () => {
         this.logoAnim = { angle: '360deg' }
       })
     } else {
-      animateTo({ duration: 0, iterations: 1, curve: Curve.Linear }, () => {
+      this.getUIContext().animateTo({ duration: 0, iterations: 1, curve: Curve.Linear }, () => {
         this.logoAnim = { angle: '0deg' }
       })
     }

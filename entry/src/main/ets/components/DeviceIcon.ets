@@ -25,7 +25,7 @@ export struct DeviceIcon {
       case 'web':
         return $r('app.media.ic_web')
       default:
-        return $r('app.media.ic_storage')
+        return $r('app.media.ic_computer')
     }
   }
 }

@@ -1,5 +1,5 @@
 import { socket } from '@kit.NetworkKit';
-import { FileInfoModel, FileTransferStatus, StringPair } from '../../model';
+import { FileInfoModel, FileTransferStatus, StringPair, TransferProgressChangedAction } from '../../model';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { Errors, logger } from 'common';
 import { buffer } from '@kit.ArkTS';
@@ -12,8 +12,6 @@ import { Context } from '@kit.AbilityKit';
 
 const TAG: string = 'UploaderServer'
 
-//文件分片大小 8k
-const MAX_READ_LENGTH = 8192
 const CRLF = '\r\n'
 
 export class UploaderServer implements Terminator {
@@ -99,48 +97,75 @@ export class UploaderServer implements Terminator {
    * @param callback 用于返回上传进度的回调函数
    * @returns
    */
-  async upload(url: string, info: FileInfoModel,
-    callback: (status: FileTransferStatus, progress: number, total: number, token: string,
-      error?: object) => void): Promise<void> {
+  async upload(filePortSize: number, url: string, info: FileInfoModel,
+    callback: (event: TransferProgressChangedAction) => void): Promise<void> {
     let file: fs.File | null = null
     try {
       if (!info.filePath) {
         return Promise.reject()
       }
+      let start = Dates.now()
       file = await FileProvider.getFile(info.filePath)
-      let input = new ArrayBuffer(MAX_READ_LENGTH)
+      let input = new ArrayBuffer(filePortSize)
       //已读文件长度
       let readSize: number = 0
       //本次读取到buffer的长度
-      let start = Dates.now()
-      let length: number = await fs.read(file.fd, input, { offset: readSize, length: MAX_READ_LENGTH })
-      logger.info(TAG, `读取耗时: ${Dates.consumed(start)}ms`)
+      let length: number = await fs.read(file.fd, input, { offset: readSize, length: filePortSize })
+      // logger.info(TAG, `读取耗时: ${Dates.consumed(start)}ms`)
       readSize += length
-      start = Dates.now()
       await this.sendChunked(url, info.size, input, info.fileType, false)
-      logger.info(TAG, `发送耗时: ${Dates.consumed(start)}ms`)
-      callback(FileTransferStatus.TRANSFERRING, readSize, info.size, info.id)
+      // logger.info(TAG, `发送耗时: ${Dates.consumed(start)}ms`)
+      callback({
+        fileId: info.id,
+        status: FileTransferStatus.TRANSFERRING,
+        progress: readSize,
+        total: info.size,
+        speed: this.getSpeed(readSize, Dates.consumed(start))
+      })
+      let lastCallTime: number = 0
       //分片向服务器发送二进制流
       while (length > 0) {
         //上传被终止
         if (this.terminated) {
           break
         }
-        input = new ArrayBuffer(MAX_READ_LENGTH)
-        start = Dates.now()
-        length = await fs.read(file.fd, input, { offset: readSize, length: MAX_READ_LENGTH })
-        logger.info(TAG, `读取耗时: ${Dates.consumed(start)}`)
+        input = new ArrayBuffer(filePortSize)
+        length = await fs.read(file.fd, input, { offset: readSize, length: filePortSize })
+        // logger.info(TAG, `读取耗时: ${Dates.consumed(start)}`)
         readSize += length
-        start = Dates.now()
-        await this.sendChunked(url, info.size, (length < MAX_READ_LENGTH) ? input.slice(0, length) : input, info.fileType, true)
-        logger.info(TAG, `发送耗时: ${Dates.consumed(start)}`)
-        callback(FileTransferStatus.TRANSFERRING, readSize, info.size, info.id)
+        await this.sendChunked(url, info.size, (length < filePortSize) ? input.slice(0, length) : input, info.fileType, true)
+        // logger.info(TAG, `发送耗时: ${Dates.consumed(start)}`)
+        //大于50ms时发送一次进度更新消息
+        const elapsed = Dates.consumed(lastCallTime)
+        if (elapsed > 50) {
+          callback({
+            fileId: info.id,
+            status: FileTransferStatus.TRANSFERRING,
+            progress: readSize,
+            total: info.size,
+            speed: this.getSpeed(readSize, Dates.consumed(start))
+          })
+          lastCallTime = Dates.now()
+        }
       }
-      callback(FileTransferStatus.COMPLETED, readSize, info.size, info.id)
+      callback({
+        fileId: info.id,
+        status: FileTransferStatus.COMPLETED,
+        progress: readSize,
+        total: info.size,
+        speed: this.getSpeed(readSize, Dates.consumed(start))
+      })
       logger.info(TAG, `文件上传成功 -> fileId: ${info.id}`)
     } catch (e) {
       logger.error(TAG, `上传文件失败: ${Errors.getErrorMessage(e)}`)
-      callback(FileTransferStatus.ERROR, 0, info.size, info.id, e)
+      callback({
+        fileId: info.id,
+        status: FileTransferStatus.ERROR,
+        progress: 0,
+        total: info.size,
+        speed: 0,
+        error: e
+      })
       return Promise.reject()
     } finally {
       if (file) {
@@ -158,7 +183,9 @@ export class UploaderServer implements Terminator {
     })
   }
 
-
+  /**
+   * 终止上传
+   */
   terminate() {
     this.terminated = true
     this.tcp.close().then(() => {
@@ -194,8 +221,7 @@ export class UploaderServer implements Terminator {
   }
 
   private onMessage(info: socket.SocketMessageInfo) {
-
-    logger.debug(TAG, `<<<---UploadResponse: \n${buffer.from(info.message).toString()}`)
+    // logger.debug(TAG, `<<<---UploadResponse: \n${buffer.from(info.message).toString()}`)
   }
 
   /**
@@ -207,8 +233,7 @@ export class UploaderServer implements Terminator {
    * @param isFirst 是否为初次发送
    * @returns
    */
-  private async sendChunked(url: string, fileSize: number, stream: ArrayBuffer, fileType: string,
-    isFirst: boolean): Promise<void> {
+  private async sendChunked(url: string, fileSize: number, stream: ArrayBuffer, fileType: string, isFirst: boolean): Promise<void> {
     await this.connect()
     if (!isFirst) {
       const protocol = new HttpProtocol(this.hostname, this.port)
@@ -237,5 +262,15 @@ export class UploaderServer implements Terminator {
     buffer.from(input).copy(buff, start.length, 0, input.byteLength)
     buff.write(CRLF, start.length + input.byteLength, CRLF.length)
     return buff.buffer
+  }
+
+  /**
+   * 返回传输速度 单位：字节/s
+   * @param size 传输大小byte
+   * @param time 传输时间ms
+   * @returns
+   */
+  private getSpeed(size: number, time: number): number {
+    return Number.parseFloat((size / (time / 1000)).toFixed(2))
   }
 }

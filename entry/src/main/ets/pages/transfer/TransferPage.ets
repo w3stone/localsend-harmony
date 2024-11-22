@@ -1,5 +1,5 @@
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
-import { Errors, logger, Screens, SizeConstant } from 'common';
+import { logger, Screens, SizeConstant } from 'common';
 import { IconButton, NavigationTitle } from '../../components';
 import {
   DeviceModel,
@@ -10,7 +10,7 @@ import {
   TransferProgressChangedAction
 } from '../../model';
 import { WebClient } from '../../service';
-import { FileProvider, Routers } from '../../utils';
+import { Dates, FileProvider, Routers } from '../../utils';
 import { FileItem } from './FileItem';
 import { EventBus, EventType } from '../../eventbus';
 import { emitter } from '@kit.BasicServicesKit';
@@ -21,12 +21,36 @@ export struct TransferPage {
   @Consume('pages') pages: NavPathStack;
   @State topPadding: Length = 0
   @State bottomPadding: Length = 0
+  //总大小
   @State total: number = 100
+  //总进度
   @State progress: number = 0
+  //总进度(百分比)
+  @State percentage: number = 0
+  //上传速度
+  @State speed: number = 0
+  //已完成数量
+  @State completed: number = 0
   @State param: TransferPageParam = new TransferPageParam(false, [])
   @State status: Map<string, FileTransferInfo> = new Map()
   @State allCompleted: boolean = false
   @State terminate: Terminator | undefined = undefined
+  //高级面板高度
+  @State mTransferInfoHeight: Length = 0
+  //高级面板展开/折叠中
+  @State isTransferInfoChanging: boolean = false
+  //高级面板是否显示
+  @State isTransferInfoDisplay: boolean = false
+  //高级面板动画
+  mTransferInfoAnim: AnimateParam = {
+    duration: 200,
+    curve: Curve.Linear,
+    iterations: 1,
+    playMode: PlayMode.Normal,
+    onFinish: () => {
+      this.isTransferInfoChanging = false
+    }
+  }
 
   build() {
     NavDestination() {
@@ -66,33 +90,52 @@ export struct TransferPage {
             top: this.topPadding,
             right: SizeConstant.SPACE_L,
           })
+          .backgroundColor($r('app.color.background'))
           .listDirection(Axis.Vertical)
 
           // 底部传输进度
           Column() {
             Column() {
-              Text(this.getTotalProcessText())
+              Text(this.getTotalEstimatedTimeText())
                 .fontSize(SizeConstant.TEXT_XXL)
                 .fontColor($r('app.color.on_background'))
                 .width('100%')
                 .textAlign(TextAlign.Start)
               Blank().height(SizeConstant.SPACE_M)
-              Progress({
-                value: this.progress || 0,
-                total: this.total || 100,
-                type: ProgressType.Linear
-              })
+              Progress({ value: this.percentage, total: 100, type: ProgressType.Linear })
                 .style({ strokeWidth: 10, enableSmoothEffect: true })
                 .color($r('app.color.primary'))
+
+              //高级信息
+              Column() {
+                Column() {
+                  Blank().height(SizeConstant.SPACE_M)
+                  Text($r('app.string.file_of_numbers', `${this.completed}/${this.param.files.length}`))
+                    .fontSize(SizeConstant.TEXT_L)
+                  Text($r('app.string.size_text', `${FileProvider.formatBytes(this.progress)} / ${FileProvider.formatBytes(this.total)}`))
+                    .fontSize(SizeConstant.TEXT_L)
+                  Text($r('app.string.speed_text', `${FileProvider.formatBytes(this.speed)}/s`))
+                    .fontSize(SizeConstant.TEXT_L)
+                }
+                .width('100%')
+                .alignItems(HorizontalAlign.Start)
+                .visibility(this.isTransferInfoChanging ? Visibility.Hidden : Visibility.Visible)
+              }
+              .width('100%')
+              .height(this.mTransferInfoHeight)
+              .animation(this.mTransferInfoAnim)
+
               Blank().height(SizeConstant.SPACE_M)
               //高级 - 取消
               Row() {
                 IconButton({
                   icon: $r('app.media.ic_detail'),
-                  text: $r('app.string.advanced'),
+                  text: this.isTransferInfoDisplay ? $r('app.string.hide') : $r('app.string.advanced'),
                   iconColor: $r('app.color.on_container'),
                   iconSize: SizeConstant.ICON_L,
                   arrangement: FlexDirection.Row
+                }).onClick(() => {
+                  this.onTransferInfoDisplayClick()
                 })
                 Blank().width(SizeConstant.SPACE_XXL)
                 IconButton({
@@ -115,7 +158,6 @@ export struct TransferPage {
             }
             .margin({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
             .padding(SizeConstant.SPACE_L)
-            // .backgroundColor($r('app.color.background'))
             .backgroundBlurStyle(BlurStyle.BACKGROUND_THIN, {})
             .borderRadius(SizeConstant.RADIUS_L)
           }
@@ -167,14 +209,17 @@ export struct TransferPage {
     this.terminate = undefined
   }
 
-  getTotalProcessText(): ResourceStr {
+  getTotalEstimatedTimeText(): ResourceStr {
     if (this.isComplete()) {
+      this.percentage = 100
       return $r('app.string.completed')
     }
     if (!this.progress) {
       return $r('app.string.total_progress', '-')
     } else {
-      return $r('app.string.total_progress', `${((this.progress / this.total) * 100).toFixed(2)}%`)
+      //预计剩余时间
+      const estimated = Number.parseFloat(((this.total - this.progress) / this.speed).toFixed(2))
+      return $r('app.string.total_progress', `${Dates.getSecondsToTime(estimated)}`)
     }
   }
 
@@ -213,20 +258,20 @@ export struct TransferPage {
   startTransfer() {
     if (this.param.sessionId && (this.param.target || []).length > 0 && this.param.fileToken) {
       const target: DeviceModel = this.param.target!![0]
-      // WebClient.upload(this.param.sessionId, target, this.param.files, this.param.fileToken, (terminate: Terminator) => {
-      //   this.terminate = terminate
-      // }).then(() => {
-      //   this.allCompleted = true
-      // }).catch((e: object) => {
-      //   logger.warn('TransferPage', `startTransferFiles => ${JSON.stringify(e)}`)
-      // })
+      WebClient.upload(this.param.sessionId, target, this.param.files, this.param.fileToken, (terminate: Terminator) => {
+        this.terminate = terminate
+      }).then(() => {
+        this.allCompleted = true
+      }).catch((e: object) => {
+        logger.warn('TransferPage', `startTransferFiles => ${JSON.stringify(e)}`)
+      })
 
-      WebClient.uploadFiles(getContext(this), this.param.sessionId, target, this.param.files, this.param.fileToken,
-        (terminate: Terminator) => this.terminate = terminate)
-        .then(() => this.allCompleted = true)
-        .catch((e: object) => {
-          logger.warn('TransferPage', `startTransfer => ${Errors.getErrorMessage(e)}`)
-        })
+      // WebClient.uploadFiles(getContext(this), this.param.sessionId, target, this.param.files, this.param.fileToken,
+      //   (terminate: Terminator) => this.terminate = terminate)
+      //   .then(() => this.allCompleted = true)
+      //   .catch((e: object) => {
+      //     logger.warn('TransferPage', `startTransfer => ${Errors.getErrorMessage(e)}`)
+      //   })
     }
   }
 
@@ -238,15 +283,36 @@ export struct TransferPage {
       const action = data.data as TransferProgressChangedAction
       if (action) {
         this.progress = action.progress
+        this.percentage = Number.parseFloat(((this.progress / this.total) * 100).toFixed(2))
+        if (action.speed > 0) {
+          this.speed = action.speed
+        }
         if (action.status == FileTransferStatus.COMPLETED) {
           this.progress = this.total
+          this.completed += 1
         }
         const index = this.param.files.findIndex((info: FileInfoModel) => info.id === action.fileId)
         if (index >= 0) {
           this.status[action.fileId].status = action.status.valueOf()
-          this.status[action.fileId].progress = action.progress
+          this.status[action.fileId].progress = Number.parseFloat(((action.progress / action.total) * 100).toFixed(2))
         }
       }
     })
+  }
+
+  /**
+   * 显示/关闭 文件传输信息
+   */
+  onTransferInfoDisplayClick() {
+    if (this.isTransferInfoChanging) {
+      return
+    }
+    this.isTransferInfoChanging = true
+    this.isTransferInfoDisplay = !this.isTransferInfoDisplay
+    if (this.isTransferInfoDisplay) {
+      this.mTransferInfoHeight = 'auto'
+    } else {
+      this.mTransferInfoHeight = 0
+    }
   }
 }

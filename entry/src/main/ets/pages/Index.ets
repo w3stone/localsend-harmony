@@ -4,6 +4,8 @@ import { Routers } from '../utils';
 import { HistoryPage } from './history/HistoryPage';
 import { Keys } from '../constant';
 import { ConfigurationConstant } from '@kit.AbilityKit';
+import { EditorPage } from './editor';
+import { DeveloperTools } from './devtools';
 
 @Entry
 @Component
@@ -21,6 +23,10 @@ struct Index {
       TransferPage()
     } else if (name == Routers.HISTORY) {
       HistoryPage()
+    } else if (name == Routers.EDIT_PAGE) {
+      EditorPage()
+    } else if (name == Routers.DEVELOPER_TOOLS) {
+      DeveloperTools()
     }
   }
 

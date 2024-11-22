@@ -191,10 +191,7 @@ export class FileProvider {
    * @param selectMode
    * @returns
    */
-  static async selectFile(
-    selected: FileInfoModel[],
-    selectMode: picker.DocumentSelectMode | undefined
-  ): Promise<Array<FileInfoModel>> {
+  static async selectFile(selected: FileInfoModel[], selectMode: picker.DocumentSelectMode | undefined): Promise<Array<FileInfoModel>> {
     try {
       const options = new picker.DocumentSelectOptions()
       options.maxSelectNumber = 20
@@ -233,6 +230,9 @@ export class FileProvider {
     return []
   }
 
+  /**
+   * 文本消息分割长度
+   */
   static TEXT_MESSAGE_MAX_SIZE = 60 * 1024 //60kb
 
   /**
@@ -272,5 +272,18 @@ export class FileProvider {
           reject(err)
         })
     })
+  }
+
+  /**
+   * 根据文件大小返回分片大小
+   * @param size
+   * @returns
+   */
+  static getFilePortLength(size: number): number {
+    if (size < 500 * FileProvider.ONE_MB) {
+      return 1075 * FileProvider.ONE_KB
+    } else {
+      return 800 * FileProvider.ONE_KB
+    }
   }
 }

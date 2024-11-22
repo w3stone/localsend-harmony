@@ -1,13 +1,13 @@
-import { SizeConstant } from 'common';
+import { logger, SizeConstant } from 'common';
 import { FileIcon, Icon, IconButton } from '../../../../components';
 import { FileInfoModel } from '../../../../model';
-import { FileProvider, ObservedArray } from '../../../../utils';
+import { FileProvider, ObservedArray, Routers } from '../../../../utils';
+import { picker } from '@kit.CoreFileKit';
 
 @Component
 export struct SelectedFiles {
-  @State files: ObservedArray<FileInfoModel> = []
-  onCloseClick?: () => void = undefined
-  onEditClick?: () => void = undefined
+  @Consume('pages') pages: NavPathStack
+  @Link files: ObservedArray<FileInfoModel>
   onAppendClick?: () => void = undefined
 
   build() {
@@ -17,7 +17,7 @@ export struct SelectedFiles {
           Text($r('app.string.number_of_files', this.files?.length || 0))
             .fontSize(SizeConstant.TEXT_XL)
             .fontColor($r('app.color.on_background'))
-          Text($r('app.string.size_of_files', this.getTotalSize()))
+          Text($r('app.string.size_text', this.getTotalSize()))
             .fontSize(SizeConstant.TEXT_XL)
             .fontColor($r('app.color.on_background'))
             .margin({ top: SizeConstant.SPACE_S })
@@ -27,7 +27,9 @@ export struct SelectedFiles {
         Blank().layoutWeight(1)
         Icon({ src: $r('app.media.ic_cancel_filled') })
           .align(Alignment.TopEnd)
-          .onClick(this.onCloseClick)
+          .onClick(() => {
+            this.files = []
+          })
       }
       .alignItems(VerticalAlign.Top)
 
@@ -48,7 +50,11 @@ export struct SelectedFiles {
       Row() {
         Button($r('app.string.edit'), { stateEffect: false, buttonStyle: ButtonStyleMode.TEXTUAL })
           .fontColor($r('app.color.on_background'))
-          .onClick(this.onEditClick)
+          .onClick(() => {
+            this.pages.pushPathByName(Routers.EDIT_PAGE, this.files, (info: PopInfo) => {
+              this.files = info.result as ObservedArray<FileInfoModel>
+            })
+          })
 
         IconButton({
           icon: $r('app.media.ic_add_filled'),
@@ -81,5 +87,15 @@ export struct SelectedFiles {
       size += file.size
     }
     return FileProvider.formatBytes(size)
+  }
+
+  addSelectFile(model: picker.DocumentSelectMode | undefined = undefined) {
+    FileProvider.selectFile(this.files, model)
+      .then((files: FileInfoModel[]) => {
+        this.files.push(...files)
+      })
+      .catch((e: Error) => {
+        logger.info('Send', `selected files error => ${e.message}\n${e.stack}`)
+      })
   }
 }

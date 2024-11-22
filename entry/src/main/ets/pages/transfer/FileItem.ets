@@ -14,7 +14,7 @@ export struct FileItem {
       FileIcon({
         fileName: this.file.fileName,
         fileType: this.file.fileType,
-        bgColor: $r('app.color.background')
+        bgColor: $r('app.color.container')
       })
 
       Blank().width(SizeConstant.SPACE_M)
@@ -25,7 +25,7 @@ export struct FileItem {
         if (this.status?.status === FileTransferStatus.TRANSFERRING) {
           Progress({
             value: this.status.progress || 0,
-            total: this.file.size || 100,
+            total: 100,
             type: ProgressType.Linear
           }).style({ strokeWidth: 10, enableSmoothEffect: true })
             .color($r('app.color.primary'))

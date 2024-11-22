@@ -1,14 +1,11 @@
 import { Screens, SizeConstant } from 'common'
 import { LengthMetrics } from '@kit.ArkUI'
-import { Icon } from '.'
 
 @Component
 export struct NavigationTitle {
   @State title: ResourceStr | undefined = undefined
   @State isHideBackButton: boolean = false
   @State titleBackgroundColor: ResourceColor = $r('app.color.background')
-  @State menus: IconMenu[] = []
-  onMenuClick?: (index: number) => void
 
   @Builder
   doNothingBuilder() {
@@ -26,20 +23,6 @@ export struct NavigationTitle {
           .fontWeight(600)
           .align(Alignment.Center)
       }
-      Blank().layoutWeight(1)
-      ForEach(this.menus, (item: IconMenu, index: number) => {
-        Icon({
-          src: item.icon,
-          iconColor: $r('app.color.on_container'),
-          spacing: 2,
-        })
-          .margin({ right: SizeConstant.SPACE_L })
-          .onClick(() => {
-            if (this.onMenuClick) {
-              this.onMenuClick(index)
-            }
-          })
-      })
     }
     .width('100%')
     .height('100%')

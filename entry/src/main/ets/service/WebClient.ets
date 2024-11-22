@@ -2,13 +2,13 @@ import {
   BaseResponse,
   FileInfoKeyMap,
   FileInfoModel,
-  FileTransferStatus,
   PrepareTransferModel,
   PrepareUploadModel,
-  StringPair
+  StringPair,
+  TransferProgressChangedAction
 } from '../model';
 import { ContentType, HttpRequest, Terminator } from '../http';
-import { DeviceProvider } from '../utils';
+import { Dates, DeviceProvider, FileProvider } from '../utils';
 import { ApiConstant } from '../constant/ApiConstant';
 import { logger, Objects } from 'common';
 import { JSON } from '@kit.ArkTS';
@@ -90,9 +90,22 @@ export class WebClient {
     const server = new UploaderServer(target.hostname, target.port)
     callback(server)
     try {
+      // let index: number = 0
+      // let testMaxLength: number[] = []
+      // let start: number = 800
+      // let end = start + (10 * 25)
+      // for (start; start <= end; start += 25) {
+      //   testMaxLength.push(start)
+      // }
       for (const pending of files) {
         const url = `${ApiConstant.UPLOAD}?sessionId=${sessionId}&fileId=${pending.id}&token=${fileTokens[pending.id]}`
-        await server.upload(url, pending, WebClient.onUploadProgressChanged)
+        const parts = FileProvider.getFilePortLength(pending.size)
+        const start = Dates.now()
+        await server.upload(parts, url, pending, WebClient.onUploadProgressChanged)
+        const consumed: number = Dates.consumed(start)
+        const speed = ((pending.size / (1024 * 1024)) / (consumed / 1000)).toFixed(2) //单位: MB/s
+        logger.info(TAG,`分片长度: ${parts} KB 文件大小: ${pending.size} => ${FileProvider.formatBytes(pending.size)} 上传耗时: ${consumed}ms 平均上传速度: ${speed}`)
+        // index += 1
       }
     } finally {
       server.disconnection()
@@ -117,13 +130,7 @@ export class WebClient {
     }
   }
 
-  static onUploadProgressChanged(status: FileTransferStatus, progress: number, total: number, fileId: string, error?: object) {
-    EventBus.getInstance().post(EventType.TRANSFER_PROGRESS_CHANGED_ACTION, TransferFileProgressEvent({
-      status: status,
-      progress: progress,
-      total: total,
-      fileId: fileId,
-      error: error
-    }))
+  static onUploadProgressChanged(event: TransferProgressChangedAction) {
+    EventBus.getInstance().post(EventType.TRANSFER_PROGRESS_CHANGED_ACTION, TransferFileProgressEvent(event))
   }
 }

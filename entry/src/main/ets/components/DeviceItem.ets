@@ -30,7 +30,7 @@ export struct DeviceItem {
             .fontSize(SizeConstant.TEXT_XL)
             .fontColor($r('app.color.on_container'))
             .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
-            .backgroundColor($r('app.color.container'))
+            .backgroundColor($r('app.color.background'))
             .borderRadius(SizeConstant.RADIUS_M)
             .visibility(this.device == undefined ? Visibility.None : Visibility.Visible)
           Blank().width(SizeConstant.TEXT_M)
