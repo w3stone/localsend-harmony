@@ -4,6 +4,7 @@ import { JSON } from '@kit.ArkTS';
 import { HttpRequestError } from './HttpRequestError';
 import { HttpLogging } from './HttpLogging';
 import { HttpTerminator, Terminator } from '.';
+import { Objects } from 'common';
 
 interface EmptyInterface {}
 
@@ -62,8 +63,8 @@ async function request<T extends BaseResponse>(url: string, method: http.Request
     } else {
       let message: string = ''
       if (resp.result) {
-        const result = JSON.parse(resp.result as string) as ErrorMessage
-        message = result.message
+        const result: ErrorMessage = Objects.clone<ErrorMessage, object>(new ErrorMessage(), JSON.parse(resp.result as string))
+        message = result.message || ''
       }
       return Promise.reject(new HttpRequestError(resp.responseCode, message))
     }

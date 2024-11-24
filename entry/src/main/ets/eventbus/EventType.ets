@@ -17,7 +17,15 @@ export class EventType {
    */
   static TRANSFER_PROGRESS_CHANGED_ACTION = 5
   /**
-   * 文件服务: ServiceAction
+   * 文件服务 启动/关闭: ServiceAction
    */
   static SERVICE_ACTION = 6
+  /**
+   * 文件发送完成
+   */
+  static UPLOAD_FILE_COMPLETED = 7
+  /**
+   * 文件发送取消
+   */
+  static UPLOAD_FILE_CANCELED = 8
 }

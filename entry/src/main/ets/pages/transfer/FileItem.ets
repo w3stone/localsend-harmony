@@ -80,6 +80,9 @@ export struct FileItem {
       case FileTransferStatus.COMPLETED:
         text = $r('app.string.completed')
         break;
+      case FileTransferStatus.CANCELED:
+        text = $r('app.string.cancel')
+        break;
       default:
         text = $r('app.string.cancel')
     }

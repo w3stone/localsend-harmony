@@ -82,51 +82,42 @@ export class WebClient {
       })
   }
 
-  static async upload(sessionId: string, target: DeviceModel, files: FileInfoModel[], fileTokens: StringPair,
-    callback: (terminate: Terminator) => void): Promise<void> {
+  static async upload(sessionId: string, target: DeviceModel, files: FileInfoModel[], fileTokens: StringPair): Promise<void> {
     if (!target.hostname) {
       throw new TransferException('invalid hostname')
     }
-    const server = new UploaderServer(target.hostname, target.port)
-    callback(server)
+    const server = new UploaderServer(target.hostname, target.port, WebClient.onUploadProgressChanged)
+    let isCanceled: boolean = false
+    EventBus.getInstance().once(EventType.UPLOAD_FILE_CANCELED, () => {
+      isCanceled = true
+      server.terminate()
+    })
     try {
-      // let index: number = 0
-      // let testMaxLength: number[] = []
-      // let start: number = 800
-      // let end = start + (10 * 25)
-      // for (start; start <= end; start += 25) {
-      //   testMaxLength.push(start)
-      // }
+      let index: number = 0
+      let testPartsStart: number = 1250
       for (const pending of files) {
+        if (isCanceled) {
+          logger.info(TAG, `文件发送取消 id: ${pending.id}`)
+          break
+        }
         const url = `${ApiConstant.UPLOAD}?sessionId=${sessionId}&fileId=${pending.id}&token=${fileTokens[pending.id]}`
         const parts = FileProvider.getFilePortLength(pending.size)
+        // const parts = (testPartsStart + 25 * index) * 1024
+        // logger.info(TAG, `开始上传文件 -> 分片长度: ${partsStr} 文件大小: ${fileSize} => ${FileProvider.formatBytes(pending.size)}`)
+        index += 1
         const start = Dates.now()
-        await server.upload(parts, url, pending, WebClient.onUploadProgressChanged)
-        const consumed: number = Dates.consumed(start)
-        const speed = ((pending.size / (1024 * 1024)) / (consumed / 1000)).toFixed(2) //单位: MB/s
-        logger.info(TAG,`分片长度: ${parts} KB 文件大小: ${pending.size} => ${FileProvider.formatBytes(pending.size)} 上传耗时: ${consumed}ms 平均上传速度: ${speed}`)
-        // index += 1
+        await server.upload(parts, url, pending)
+        if (!isCanceled) {
+          const consumed: number = Dates.consumed(start)
+          const speed = ((pending.size / (1024 * 1024)) / (consumed / 1000)).toFixed(2) //单位: MB/s
+          const partsStr = `${parts / 1024} KB`
+          const fileSize = FileProvider.formatBytes(pending.size)
+          logger.info(TAG,`文件上传完成 分片长度: ${partsStr} 文件大小: ${pending.size} => ${fileSize} 上传耗时: ${consumed}ms 平均上传速度: ${speed}`)
+        }
       }
     } finally {
       server.disconnection()
-    }
-  }
-
-  static async uploadFiles(context: Context, sessionId: string, target: DeviceModel, files: FileInfoModel[],
-    fileTokens: StringPair, callback: (terminate: Terminator) => void): Promise<void> {
-    if (!target.hostname) {
-      throw new TransferException('invalid hostname')
-    }
-    const server = new UploaderServer(target.hostname, target.port)
-    callback(server)
-    try {
-      for (const pending of files) {
-        let url = `${ApiConstant.UPLOAD}?sessionId=${sessionId}&fileId=${pending.id}&token=${fileTokens[pending.id]}`
-        url = WebClient.getCombinedURL(target.hostname, target.port, url)
-        await server.createBackgroundTask(context, url, fileTokens[pending.id], pending.filePath!!)
-      }
-    } finally {
-      server.disconnection()
+      EventBus.getInstance().unregister(EventType.UPLOAD_FILE_CANCELED)
     }
   }
 

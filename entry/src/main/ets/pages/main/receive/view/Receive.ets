@@ -154,14 +154,14 @@ export struct Receive {
       const data: NumberEventData = event.data as NumberEventData
       switch (data.value) {
         case ServiceActionType.Start:
-          service.start(AppStorage.get(Keys.PORT))
+          service.start()
           break
         case ServiceActionType.Stop:
           service.stop()
           break
         case ServiceActionType.Restart:
           service.stop().then(() => {
-            service.start(AppStorage.get(Keys.PORT))
+            service.start()
           })
           break
       }
@@ -178,10 +178,6 @@ export struct Receive {
         this.logoAnim = { angle: '0deg' }
       })
     }
-  }
-
-  onBackPress(): boolean | void {
-    logger.info('ReceivePage', 'onBackPress onBackPress')
   }
 
   aboutToDisappear(): void {

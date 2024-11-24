@@ -4,7 +4,7 @@ import { logger, Strings } from 'common';
 import { fileUri, fileIo as fs, picker } from '@kit.CoreFileKit';
 import { PickerUtil } from '@pura/harmony-utils';
 import { buffer, util } from '@kit.ArkTS';
-import { mime } from 'serve';
+import { mime } from './mime';
 import { BusinessError } from '@kit.BasicServicesKit';
 
 const TAG = 'FileProvider'
@@ -282,8 +282,11 @@ export class FileProvider {
   static getFilePortLength(size: number): number {
     if (size < 500 * FileProvider.ONE_MB) {
       return 1075 * FileProvider.ONE_KB
+    } else if (size < FileProvider.ONE_GB) {
+      return 825 * FileProvider.ONE_KB
     } else {
-      return 800 * FileProvider.ONE_KB
+      return 1150 * FileProvider.ONE_KB
+      // return 1075 * FileProvider.ONE_KB
     }
   }
 }

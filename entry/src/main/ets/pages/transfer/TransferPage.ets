@@ -1,5 +1,5 @@
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
-import { logger, Screens, SizeConstant } from 'common';
+import { Screens, SizeConstant } from 'common';
 import { IconButton, NavigationTitle } from '../../components';
 import {
   DeviceModel,
@@ -14,7 +14,6 @@ import { Dates, FileProvider, Routers } from '../../utils';
 import { FileItem } from './FileItem';
 import { EventBus, EventType } from '../../eventbus';
 import { emitter } from '@kit.BasicServicesKit';
-import { Terminator } from '../../http';
 
 @Component
 export struct TransferPage {
@@ -24,6 +23,8 @@ export struct TransferPage {
   //总大小
   @State total: number = 100
   //总进度
+  @State totalProgress: number = 0
+  //当前文件传输进度
   @State progress: number = 0
   //总进度(百分比)
   @State percentage: number = 0
@@ -34,7 +35,6 @@ export struct TransferPage {
   @State param: TransferPageParam = new TransferPageParam(false, [])
   @State status: Map<string, FileTransferInfo> = new Map()
   @State allCompleted: boolean = false
-  @State terminate: Terminator | undefined = undefined
   //高级面板高度
   @State mTransferInfoHeight: Length = 0
   //高级面板展开/折叠中
@@ -112,7 +112,8 @@ export struct TransferPage {
                   Blank().height(SizeConstant.SPACE_M)
                   Text($r('app.string.file_of_numbers', `${this.completed}/${this.param.files.length}`))
                     .fontSize(SizeConstant.TEXT_L)
-                  Text($r('app.string.size_text', `${FileProvider.formatBytes(this.progress)} / ${FileProvider.formatBytes(this.total)}`))
+                  Text($r('app.string.size_text',
+                    `${FileProvider.formatBytes(this.totalProgress + this.progress)} / ${FileProvider.formatBytes(this.total)}`))
                     .fontSize(SizeConstant.TEXT_L)
                   Text($r('app.string.speed_text', `${FileProvider.formatBytes(this.speed)}/s`))
                     .fontSize(SizeConstant.TEXT_L)
@@ -139,13 +140,13 @@ export struct TransferPage {
                 })
                 Blank().width(SizeConstant.SPACE_XXL)
                 IconButton({
-                  icon: this.isComplete() ? $r('app.media.ic_ok_filled') : $r('app.media.ic_cancel_filled'),
-                  text: this.isComplete() ? $r('app.string.complete') : $r('app.string.cancel'),
+                  icon: this.allCompleted ? $r('app.media.ic_ok_filled') : $r('app.media.ic_cancel_filled'),
+                  text: this.allCompleted ? $r('app.string.complete') : $r('app.string.cancel'),
                   iconColor: $r('app.color.on_container'),
                   iconSize: SizeConstant.ICON_L,
                   arrangement: FlexDirection.Row
                 }).onClick(() => {
-                  if (this.isComplete()) {
+                  if (this.allCompleted) {
                     FileProvider.setTransferComplete()
                     this.pages.pop()
                   } else {
@@ -206,25 +207,20 @@ export struct TransferPage {
   aboutToDisappear(): void {
     EventBus.getInstance().unregister(EventType.TRANSFER_PROGRESS_CHANGED_ACTION)
     this.status.clear()
-    this.terminate = undefined
   }
 
   getTotalEstimatedTimeText(): ResourceStr {
-    if (this.isComplete()) {
+    if (this.allCompleted) {
       this.percentage = 100
       return $r('app.string.completed')
     }
-    if (!this.progress) {
+    if (!this.percentage) {
       return $r('app.string.total_progress', '-')
     } else {
       //预计剩余时间
-      const estimated = Number.parseFloat(((this.total - this.progress) / this.speed).toFixed(2))
+      const estimated = Number.parseFloat(((this.total - this.totalProgress - this.progress) / this.speed).toFixed(2))
       return $r('app.string.total_progress', `${Dates.getSecondsToTime(estimated)}`)
     }
-  }
-
-  isComplete(): boolean {
-    return this.total == this.progress
   }
 
   //取消提示
@@ -246,7 +242,7 @@ export struct TransferPage {
       secondaryButton: $r('app.string.positive'),
       onAction: (action) => {
         if (action == DialogAction.TWO) {
-          this.terminate?.terminate()
+          EventBus.getInstance().post(EventType.UPLOAD_FILE_CANCELED)
           FileProvider.setTransferComplete()
           this.pages.pop()
         }
@@ -258,20 +254,13 @@ export struct TransferPage {
   startTransfer() {
     if (this.param.sessionId && (this.param.target || []).length > 0 && this.param.fileToken) {
       const target: DeviceModel = this.param.target!![0]
-      WebClient.upload(this.param.sessionId, target, this.param.files, this.param.fileToken, (terminate: Terminator) => {
-        this.terminate = terminate
-      }).then(() => {
-        this.allCompleted = true
-      }).catch((e: object) => {
-        logger.warn('TransferPage', `startTransferFiles => ${JSON.stringify(e)}`)
-      })
-
-      // WebClient.uploadFiles(getContext(this), this.param.sessionId, target, this.param.files, this.param.fileToken,
-      //   (terminate: Terminator) => this.terminate = terminate)
-      //   .then(() => this.allCompleted = true)
-      //   .catch((e: object) => {
-      //     logger.warn('TransferPage', `startTransfer => ${Errors.getErrorMessage(e)}`)
-      //   })
+      WebClient.upload(this.param.sessionId, target, this.param.files, this.param.fileToken)
+        .then(() => {
+          EventBus.getInstance().post(EventType.UPLOAD_FILE_COMPLETED)
+        })
+        .finally(() => {
+          this.allCompleted = true
+        })
     }
   }
 
@@ -282,19 +271,25 @@ export struct TransferPage {
     EventBus.getInstance().on(EventType.TRANSFER_PROGRESS_CHANGED_ACTION, (data: emitter.EventData) => {
       const action = data.data as TransferProgressChangedAction
       if (action) {
-        this.progress = action.progress
-        this.percentage = Number.parseFloat(((this.progress / this.total) * 100).toFixed(2))
+        if (action.status == FileTransferStatus.TRANSFERRING) {
+          this.progress = action.progress
+          this.percentage = Number.parseFloat((((this.totalProgress + action.progress) / this.total) * 100).toFixed(2))
+        } else if (action.status == FileTransferStatus.COMPLETED) {
+          this.totalProgress += action.progress
+        }
         if (action.speed > 0) {
           this.speed = action.speed
         }
-        if (action.status == FileTransferStatus.COMPLETED) {
-          this.progress = this.total
+        if (action.status != FileTransferStatus.QUEUE && action.status != FileTransferStatus.TRANSFERRING) {
+          this.progress = 0
           this.completed += 1
         }
         const index = this.param.files.findIndex((info: FileInfoModel) => info.id === action.fileId)
         if (index >= 0) {
           this.status[action.fileId].status = action.status.valueOf()
-          this.status[action.fileId].progress = Number.parseFloat(((action.progress / action.total) * 100).toFixed(2))
+          if (action.status == FileTransferStatus.TRANSFERRING) {
+            this.status[action.fileId].progress = Number.parseFloat(((action.progress / action.total) * 100).toFixed(2))
+          }
         }
       }
     })

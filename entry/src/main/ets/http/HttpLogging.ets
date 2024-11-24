@@ -9,7 +9,7 @@ export class HttpLogging {
   static print(url: String, options: http.HttpRequestOptions) {
     if (options.method) {
     }
-    HttpLogging.log(`---> ${options.method} ${url} ${options.usingProtocol?.toString()}\n`)
+    HttpLogging.log(`---> ${options.method} ${url}\n`)
     if (options.header) {
       for (const entries of Object.entries<string>(options.header as StringPair)) {
         HttpLogging.log(`${entries[0]}: ${entries[1]}`)
@@ -18,6 +18,7 @@ export class HttpLogging {
     if (options.extraData) {
       HttpLogging.log(`${JSON.stringify(options.extraData)}`)
     }
+    HttpLogging.log(`---> END`)
   }
 
   static log(message: string) {

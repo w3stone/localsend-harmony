@@ -153,6 +153,12 @@ export struct Send {
     }
   }
 
+  aboutToAppear(): void {
+    EventBus.getInstance().on(EventType.UPLOAD_FILE_COMPLETED, () => {
+      this.selectedFiles = []
+    })
+  }
+
   addSelectFile(model: picker.DocumentSelectMode | undefined = undefined) {
     FileProvider.selectFile(this.selectedFiles, model)
       .then((files: FileInfoModel[]) => {
@@ -205,5 +211,9 @@ export struct Send {
         },
       }
     )
+  }
+
+  aboutToDisappear(): void {
+    EventBus.getInstance().unregister(EventType.UPLOAD_FILE_COMPLETED)
   }
 }

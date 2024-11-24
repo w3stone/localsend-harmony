@@ -3,9 +3,8 @@ import { NavigationTitle } from '../../components'
 import { ReceivedFileModel } from '../../model'
 import { HistoryItem } from './HistoryItem'
 import { util } from '@kit.ArkTS'
-import { mime } from 'serve'
 import { RandomUtil } from '@pura/harmony-utils'
-import { Dates, DeviceProvider, FileProvider } from '../../utils'
+import { Dates, DeviceProvider, FileProvider, mime } from '../../utils'
 import { Screens } from 'common'
 
 @Component

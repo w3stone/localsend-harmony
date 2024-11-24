@@ -1,6 +1,6 @@
-import { HttpError, IncomingMessage, polka, Polka, Request, ServerResponse } from 'serve';
 import {
   DeviceModel,
+  ErrorMessage,
   MulticastModel,
   PrepareTransferModel,
   PrepareUploadModel,
@@ -9,7 +9,7 @@ import {
 } from '../model';
 import { socket } from '@kit.NetworkKit';
 import { Errors, logger, Strings } from 'common';
-import { buffer, JSON } from '@kit.ArkTS';
+import { JSON } from '@kit.ArkTS';
 import { BusinessError, emitter } from '@kit.BasicServicesKit';
 import { Keys } from '../constant';
 import { WebClient } from './WebClient';
@@ -17,85 +17,69 @@ import { DeviceProvider } from '../utils';
 import { EventBus, EventType, PrepareUploadEvent } from '../eventbus';
 import { FileProvider } from '../utils/FileProvider';
 import { FileReceptionService } from './FileReceptionService';
+import { createHttpServer, HttpServer } from 'serve/src/main/ets/http/HttpServer';
+import { HttpExchange } from 'serve/src/main/ets/http/HttpExchange';
+import { HttpError } from 'serve';
 
 const TAG: string = "WebService"
-const app: Polka<Request> = polka({
-  subscriber: {
-    onConnect(req: IncomingMessage, res: ServerResponse) {
-    },
-    onHeader(req: IncomingMessage, res: ServerResponse) {
-      logger.info(TAG, "--- header-event ---")
-    },
-    onData(req: IncomingMessage, res: ServerResponse, stream: buffer.Buffer) {
-      new Promise<void>((resolve, reject) => {
-        const buf = buffer.alloc(1000)
-        const len = (stream.length > 1000) ? 1000 : stream.length
-        stream.copy(buf, 0, 0, len)
-        logger.info(TAG, 'onData => ' + Strings.buf2String(buf.buffer))
-        return
-      })
-      logger.info('WebService', `上传进度：`)
-    }
-  }
-})
+
 const udp: socket.MulticastSocket = socket.constructMulticastSocketInstance();
+const server: HttpServer = createHttpServer()
 
 export class WebService {
   isRunning: boolean = false
   alias: string = ''
-  port: number = AppStorage.get(Keys.PORT) || 53317
+  port: number = 53317
   multicast: string = '224.0.0.167'
 
   constructor(alias: string) {
     this.alias = alias
   }
 
-  start(port: number | undefined = undefined) {
-    if (port) {
-      this.port = this.port
-    }
-    udp.addMembership({ address: this.multicast, port: this.port }, (err: BusinessError) => {
-      if (err) {
-        logger.info(TAG, `>>>--- UDP 组播添加失败 -> ${JSON.stringify(err)}`)
-      } else {
-        logger.info(TAG, `>>>--- UDP 组播已添加 -> Running: ${this.multicast}:${this.port}`);
-      }
-    })
-    udp.on("listening", () => {
-      logger.info(TAG, `---<<< UDP  -> listening`);
-    })
-    udp.on('close', () => {
-      logger.info(TAG, `---<<< UDP  -> close`);
-    })
-    udp.on('message', (info: socket.SocketMessageInfo) => {
-      let message = Strings.buf2String(info.message)
-      let device: DeviceModel = JSON.parse(message) as DeviceModel
-      if (device && device.fingerprint != DeviceProvider.getDeviceFingerprint() && device.announce == true) {
-        device.hostname = info.remoteInfo.address
-        DeviceProvider.addOrReplaceDevice(info.remoteInfo.address, device)
-        logger.info(TAG, '<<<---UDP received message: ' + JSON.stringify(device));
-        WebClient.register(device)
-      }
-    })
-    app
-      .get("/", this.index)
-      .post("/api/localsend/v2/register", this.register)
-      .post("/api/localsend/v2/prepare-upload", this.prepareUpload)
-      .post("/api/localsend/v2/upload", this.upload)
-      .post("/api/localsend/v2/cancel", this.cancel)
-      .post("/api/localsend/v2/download", this.cancel)
-      .listen(this.port, "0.0.0.0")
-      .then((isRunning: boolean) => {
-        AppStorage.setOrCreate(Keys.SERVICE_IS_ONLINE, isRunning)
-        this.isRunning = isRunning
-        this.scanOtherDevice()
+  async start(): Promise<void> {
+    try {
+      this.port = AppStorage.get(Keys.PORT) || 53317
+      this.multicast = AppStorage.get(Keys.MULTICAST_ADDRESS) || '224.0.0.167'
+
+      await udp.addMembership({ address: this.multicast, port: this.port })
+      logger.info(TAG, `>>>--- UDP 组播已添加 -> Running: ${this.multicast}:${this.port}`)
+      udp.on("listening", () => {
+        logger.info(TAG, `---<<< UDP  -> listening`);
       })
+      udp.on('close', () => {
+        logger.info(TAG, `---<<< UDP  -> close`);
+      })
+      udp.on('message', (info: socket.SocketMessageInfo) => {
+        let message = Strings.buf2String(info.message)
+        let device: DeviceModel = JSON.parse(message) as DeviceModel
+        if (device && device.fingerprint != DeviceProvider.getDeviceFingerprint() && device.announce == true) {
+          device.hostname = info.remoteInfo.address
+          DeviceProvider.addOrReplaceDevice(info.remoteInfo.address, device)
+          logger.info(TAG, '<<<---UDP received message: ' + JSON.stringify(device));
+          WebClient.register(device)
+        }
+      })
+      const isRunning = await server.bind({ address: '0.0.0.0', port: this.port })
+        .get('/', this.index)
+        .post('/api/localsend/v2/register', this.register)
+        .post('/api/localsend/v2/prepare-upload', this.prepareUpload)
+        .post('/api/localsend/v2/upload', this.upload)
+        .post('/api/localsend/v2/cancel', this.cancel)
+        .post('/api/localsend/v2/download', this.download)
+        .start()
+      AppStorage.setOrCreate(Keys.SERVICE_IS_ONLINE, isRunning)
+      this.isRunning = isRunning
+      this.scanOtherDevice()
+    } catch (e) {
+      logger.error(TAG, `Web服务启动失败: ${Errors.getErrorMessage(e)}`)
+      return Promise.reject(HttpError.error(500, 'Server startup failed'))
+    }
   }
 
   async stop(): Promise<void> {
     this.isRunning = false
     try {
-      app.server?.stop()
+      await server.stop()
       udp.off("message")
       await udp.dropMembership({ address: this.multicast, port: this.port })
       await udp.close()
@@ -121,126 +105,130 @@ export class WebService {
     })
   }
 
-  private index(req: IncomingMessage, res: ServerResponse) {
-    logger.info(TAG, "<<<--- index: " + req.remote.address)
-    res.end(JSON.stringify({ "msg": "ok", "code": 1000 }))
+  private index(exchange: HttpExchange) {
+    const headers: Map<string, string> = exchange.getRequestHeaders().getAllHeaders()
+    logger.info(TAG, `request headers: ${JSON.stringify([headers.entries()])}`)
+    exchange.end('HelloWorld')
   }
 
-  private register(req: IncomingMessage, res: ServerResponse) {
-    const device: DeviceModel = req.body as DeviceModel
-    device.hostname = req.remote.address
-    logger.info(TAG, "<<<--- register: " + JSON.stringify(device))
-    DeviceProvider.addOrReplaceDevice(req.remote.address, device)
-    res.writeJson(new MulticastModel(false))
+  private register(exchange: HttpExchange) {
+    logger.info(TAG, "<<<--- register isEnd: " + exchange.isEnd)
+    if (exchange.isEnd) {
+      const device: DeviceModel = exchange.getRequestJsonBody() as DeviceModel
+      device.hostname = exchange.getRemoteAddress()?.address || ''
+      logger.info(TAG, "<<<--- register: " + JSON.stringify(device))
+      DeviceProvider.addOrReplaceDevice(device.hostname!!, device)
+      exchange.writeJson(new MulticastModel(false))
+    }
   }
 
-  private prepareUpload(req: IncomingMessage, res: ServerResponse) {
-    logger.info(TAG, `<<<--- prepare-upload ${req.originalUrl} \nbody:${JSON.stringify(req.body)}`)
+  private prepareUpload(exchange: HttpExchange) {
     if (FileProvider.isTransferringNow()) {
-      res.setStatusCode(409).writeJson({ message: "Blocked by another session" })
+      exchange.setStatusCode(409).writeJson(new ErrorMessage("Blocked by another session"))
       return
     }
-    const body = req.body as PrepareUploadModel
-    if (!body) {
-      res.setStatusCode(400).writeJson({ message: 'Invalid body' })
-      return
-    }
-    if (Object.keys(body.files).length == 0) {
-      res.setStatusCode(400).writeJson({ message: 'Request must contain at least one file' })
-      return
-    }
-    EventBus.getInstance().once(EventType.RECEIVE_SEND_REQUEST_ACTION, (eventData: emitter.EventData) => {
-      const data = eventData.data as ReceiveResultAction
-      if (data) {
-        if (data.action == ReceiveResultActionType.ACCEPT) {
-          new Promise<PrepareTransferModel>((resolve, reject) => {
-            try {
-              const prepare: PrepareUploadModel = req.body as PrepareUploadModel
-              const result: PrepareTransferModel = FileReceptionService.getPrepareReceptionData(prepare)
-              FileProvider.addFilesToReceiveQueue(prepare, result, req.remote.address)
-              resolve(result)
-            } catch (e) {
-              reject(e)
-            }
-          }).then((result) => res.writeJson(result))
-            .catch(() => {
-              res.setStatusCode(data.code || 500).writeJson({ message: "Unknown error by receiver" })
-              FileProvider.clearFilesReceiveQueue()
-            })
-        } else if (data.action == ReceiveResultActionType.REJECT) {
-          res.setStatusCode(403)
-            .writeJson({ message: "File request declined by recipient" })
-        } else if (data.action == ReceiveResultActionType.COMPLETE) {
-          res.setStatusCode(204)
-            .writeJson({})
-        } else {
-          res.setStatusCode(data.code || 500)
-            .writeJson({ message: "Unknown error by receiver" })
-        }
-      } else {
-        logger.error('WebService', `prepareUpload: event data is null ${JSON.stringify(eventData.data)}`)
-        res.setStatusCode(500)
-          .writeJson({ message: "Unknown error by receiver" })
+    if (exchange.isEnd) {
+      const body: PrepareUploadModel = exchange.getRequestJsonBody<PrepareUploadModel>()
+      logger.info(TAG, `<<<--- prepare-upload ${exchange.getRequestURI()} body:${JSON.stringify(body)}`)
+      if (!body) {
+        exchange.setStatusCode(400).writeJson(new ErrorMessage('Invalid body'))
+        return
       }
-    })
-    EventBus.getInstance().post(EventType.RECEIVE_SEND_REQUEST, PrepareUploadEvent(body))
+      if (Object.keys(body.files).length == 0) {
+        exchange.setStatusCode(400).writeJson(new ErrorMessage('Request must contain at least one file'))
+        return
+      }
+      EventBus.getInstance().once(EventType.RECEIVE_SEND_REQUEST_ACTION, (eventData: emitter.EventData) => {
+        const data = eventData.data as ReceiveResultAction
+        if (data) {
+          if (data.action == ReceiveResultActionType.ACCEPT) {
+            new Promise<PrepareTransferModel>((resolve, reject) => {
+              try {
+                const prepare: PrepareUploadModel = exchange.getRequestJsonBody() as PrepareUploadModel
+                const result: PrepareTransferModel = FileReceptionService.getPrepareReceptionData(prepare)
+                FileProvider.addFilesToReceiveQueue(prepare, result, exchange.getRemoteAddress()?.address || '')
+                resolve(result)
+              } catch (e) {
+                reject(e)
+              }
+            }).then((result) => exchange.writeJson(result))
+              .catch(() => {
+                exchange.setStatusCode(data.code || 500).writeJson(new ErrorMessage("Unknown error by receiver"))
+                FileProvider.clearFilesReceiveQueue()
+              })
+          } else if (data.action == ReceiveResultActionType.REJECT) {
+            exchange.setStatusCode(403).writeJson(new ErrorMessage("File request declined by recipient"))
+          } else if (data.action == ReceiveResultActionType.COMPLETE) {
+            exchange.setStatusCode(204).writeJson(new ErrorMessage())
+          } else {
+            exchange.setStatusCode(data.code || 500).writeJson(new ErrorMessage("Unknown error by receiver"))
+          }
+        } else {
+          logger.error('WebService', `prepareUpload: event data is null ${JSON.stringify(eventData.data)}`)
+          exchange.setStatusCode(500).writeJson(new ErrorMessage("Unknown error by receiver"))
+        }
+        EventBus.getInstance().unregister(EventType.RECEIVE_SEND_REQUEST_ACTION)
+      })
+      EventBus.getInstance().post(EventType.RECEIVE_SEND_REQUEST, PrepareUploadEvent(body))
+    }
   }
 
-  private upload(req: IncomingMessage, res: ServerResponse) {
-
-    logger.info(TAG, "<<<--- upload " + req.originalUrl)
+  private upload(exchange: HttpExchange) {
+    logger.info(TAG, `<<<--- upload isEnd: ${exchange.isEnd} url: ${exchange.originalUrl}`)
     const isReceivingFiles = FileProvider.isTransferringNow()
     //当前位处于接收文件状态，直接调用了upload接口
     if (!isReceivingFiles) {
-      res.setStatusCode(403).writeJson({ message: "Invalid token or IP address" })
+      exchange.setStatusCode(403).writeJson(new ErrorMessage("Invalid token or IP address"))
       return
     }
-    const sessionId = req.queryParameters.get('sessionId')
+    const sessionId = exchange.getQueryParams('sessionId')
     //sessionId未传
     if (!sessionId) {
-      res.setStatusCode(400).writeJson({ message: "Missing parameters" })
+      exchange.setStatusCode(400).writeJson(new ErrorMessage("Missing parameters"))
       return
     }
     //当前正在接收文件但不是发送请求的这台设备
     if (isReceivingFiles && FileProvider.getTransferringNowSessionId() !== sessionId) {
-      res.setStatusCode(409).writeJson({ message: "Blocked by another session" })
+      exchange.setStatusCode(409).writeJson(new ErrorMessage("Blocked by another session"))
       return
     }
-    const token = req.queryParameters.get('token')
+    const token = exchange.getQueryParams('token')
     if (!token) {
-      res.setStatusCode(403).writeJson({ message: "Invalid token or IP address" })
+      exchange.setStatusCode(403).writeJson(new ErrorMessage("Invalid token or IP address"))
       return
     }
-    new Promise<void>(() => {
-      const info = FileProvider.getReceiveFileInfo(token)
-      //未找到队列指定token的文件接收信息，或当前请求IP与该token文件信息中IP不一致
-      if (!info || info.remoteIp != req.remote.address) {
-        throw HttpError.error(403, 'Invalid token or IP address')
-      }
-      logger.info(TAG, `--- upload ${FileProvider.formatBytes(req.getContentLength())}`)
-      //保存文件
-      return 200
-    }).then(_ => {
-      res.end(undefined)
-    }).catch((error: Error) => {
-      if (error instanceof HttpError) {
-        res.setStatusCode(error.status).writeJson({ message: error.message })
-      } else {
-        logger.error(TAG, `文件保存失败: ${error.message} \n${error.stack}`)
-        res.setStatusCode(500).writeJson({ message: 'Unknown error by receiver' })
-      }
-    })
-    res.end(JSON.stringify({ "msg": "ok", "code": 1000 }))
+    const info = FileProvider.getReceiveFileInfo(token)
+    //未找到队列指定token的文件接收信息，或当前请求IP与该token文件信息中IP不一致
+    if (!info || info.remoteIp != exchange.getRemoteAddress()?.address) {
+      exchange.setStatusCode(403).writeJson(new ErrorMessage('Invalid token or IP address'))
+      return
+    }
+
+    if (exchange.getAttribute('onStream') === undefined) {
+      exchange.setAttribute('onStream', (stream: ArrayBuffer): Promise<void> => {
+        logger.info(TAG, 'on-stream: ' + stream.byteLength)
+        ///save to file
+        return Promise.resolve()
+      })
+    }
+    if (exchange.isEnd) {
+      exchange.writeJson(new ErrorMessage())
+    }
   }
 
-  private cancel(req: IncomingMessage, res: ServerResponse) {
-    logger.info(TAG, "<<<---cancel: " + req.remote.address)
-    res.end(JSON.stringify({ "msg": "ok", "code": 1000 }))
+  private cancel(exchange: HttpExchange) {
+    if (exchange.isEnd) {
+      logger.info(TAG, `<<<--- cancel sessionId: ${exchange.getQueryParams('sessionId')}`)
+      EventBus.getInstance().post(EventType.UPLOAD_FILE_CANCELED)
+      exchange.end()
+    }
   }
 
-  private download(req: IncomingMessage, res: ServerResponse) {
-    logger.info(TAG, "<<<---download: " + req.remote.address)
-    res.end(JSON.stringify({ "msg": "ok", "code": 1000 }))
+  private download(exchange: HttpExchange) {
+    if (exchange.isEnd) {
+      logger.info(TAG, `<<<--- download: ${exchange.originalUrl}`)
+      exchange.end()
+    }
   }
 }
 
