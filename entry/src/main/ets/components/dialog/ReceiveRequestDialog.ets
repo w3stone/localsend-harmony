@@ -2,11 +2,13 @@ import { Screens, SizeConstant, toast } from 'common'
 import { DeviceIcon, IconButton } from '..'
 import { PrepareUploadModel } from '../../model'
 import { pasteboard } from '@kit.BasicServicesKit'
+import { Routers } from '../../utils'
 
 @CustomDialog
 export struct ReceiveRequestDialog {
+  @Consume('pages') page: NavPathStack;
   controller: CustomDialogController
-  @Prop data?: PrepareUploadModel | null = null
+  @Prop data: PrepareUploadModel | null = null
   onRejectClick?: (dialog: CustomDialogController) => void
   onAcceptClick?: (dialog: CustomDialogController) => void
   onCompleteClick?: (dialog: CustomDialogController) => void
@@ -103,9 +105,7 @@ export struct ReceiveRequestDialog {
           iconSize: SizeConstant.ICON_L,
           arrangement: FlexDirection.Row,
         }).onClick(() => {
-          if (this.onCompleteClick) {
-            this.onCompleteClick(this.controller)
-          }
+          this.page.pushDestination({ name: Routers.RECEIVE_SETTING, param: this.data })
         })
         Blank().height(34)
         Row() {

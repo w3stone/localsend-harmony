@@ -58,6 +58,8 @@ export struct Receive {
       })
       .justifyContent(FlexAlign.End)
 
+      Blank().height(SizeConstant.SPACE_L)
+
       Icon({ src: $r('app.media.logo'), dimension: 256 }).rotate(this.logoAnim)
       Text(this.alias || "")
         .fontSize(36)
@@ -138,6 +140,7 @@ export struct Receive {
       }
 
       Blank().height(SizeConstant.SPACE_XXL)
+      Blank().height(SizeConstant.SPACE_XL)
     }
     .size({ width: '100%', height: '100%' })
     .padding({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })

@@ -78,6 +78,7 @@ export class WebService {
       AppStorage.setOrCreate(Keys.SERVICE_IS_ONLINE, isRunning)
       this.isRunning = isRunning
       this.scanOtherDevice()
+      logger.info(TAG, `WebService start. isRunning: ${isRunning}`)
     } catch (e) {
       logger.error(TAG, `Web服务启动失败: ${Errors.getErrorMessage(e)}`)
       return Promise.reject(HttpError.error(500, 'Server startup failed'))
@@ -87,10 +88,11 @@ export class WebService {
   async stop(): Promise<void> {
     this.isRunning = false
     try {
-      await server.stop()
       udp.off("message")
       await udp.dropMembership({ address: this.multicast, port: this.port })
       await udp.close()
+      await server.stop()
+      logger.info(TAG, `WebService stoped!`)
     } catch (e) {
       logger.warn(TAG, `WebService stop error: ${Errors.getErrorMessage(e)}`)
     } finally {
@@ -135,6 +137,14 @@ export class WebService {
       exchange.setStatusCode(409).writeJson(new ErrorMessage("Blocked by another session"))
       return
     }
+    const userPin: string | undefined = AppStorage.get(Keys.USE_PIN_WHEN_RECEIVE)
+    if (userPin) {
+      const pin: string = exchange.getQueryParams('pin')
+      if (pin != userPin) {
+        exchange.setStatusCode(401).writeJson(new ErrorMessage("PIN required / Invalid PIN"))
+        return
+      }
+    }
     if (exchange.isEnd) {
       const body: PrepareUploadModel = exchange.getRequestJsonBody<PrepareUploadModel>()
       logger.info(TAG, `<<<--- prepare-upload ${exchange.getRequestURI()} body:${JSON.stringify(body)}`)
@@ -155,6 +165,7 @@ export class WebService {
                 const prepare: PrepareUploadModel = exchange.getRequestJsonBody() as PrepareUploadModel
                 const result: PrepareTransferModel = FileReceptionService.getPrepareReceptionData(prepare)
                 FileProvider.addFilesToReceiveQueue(prepare, result, exchange.getRemoteAddress()?.address || '')
+                FileProvider.setTransferringNowSessionId(result.sessionId)
                 resolve(result)
               } catch (e) {
                 reject(e)

@@ -17,6 +17,10 @@ export class PersistentStorageProvider {
     if (AppStorage.get(Keys.USE_PIN_WHEN_RECEIVE) == undefined) {
       PersistentStorage.persistProp(Keys.USE_PIN_WHEN_RECEIVE, undefined)
     }
+    //保存接收记录
+    if (AppStorage.get(Keys.SAVE_RECEIVE_RECORD) == undefined) {
+      PersistentStorage.persistProp(Keys.SAVE_RECEIVE_RECORD, undefined)
+    }
     //随机生成一个别名
     if (AppStorage.get(Keys.ALIAS) == undefined) {
       PersistentStorage.persistProp(Keys.ALIAS, DeviceProvider.getRandomAlias(context.resourceManager))

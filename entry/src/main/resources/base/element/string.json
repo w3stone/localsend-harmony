@@ -181,6 +181,54 @@
       "value": "错误"
     },
     {
+      "name": "quick_operation",
+      "value": "快捷操作"
+    },
+    {
+      "name": "unchanged",
+      "value": "未更改"
+    },
+    {
+      "name": "renamed",
+      "value": "已重命名"
+    },
+    {
+      "name": "counter",
+      "value": "计数器"
+    },
+    {
+      "name": "random",
+      "value": "随机"
+    },
+    {
+      "name": "prefix",
+      "value": "前缀"
+    },
+    {
+      "name": "zero_fill",
+      "value": "以零填充"
+    },
+    {
+      "name": "alphabet_sort",
+      "value": "事先以字母顺序排序"
+    },
+    {
+      "name": "example",
+      "value": "示例"
+    },
+    {
+      "name": "enter_filename",
+      "value": "输入文件名"
+    },
+    {
+      "name": "original_name",
+      "value": "原名"
+    },
+    {
+      "name": "reset",
+      "value": "重置"
+    },
+    {
       "name": "receiving_files",
       "value": "正在接收文件"
     },
@@ -375,6 +423,14 @@
     {
       "name": "use_pin",
       "value": "需要一个PIN"
+    },
+    {
+      "name": "enter_pin",
+      "value": "输入PIN"
+    },
+    {
+      "name": "invalid_pin",
+      "value": "无效的PIN"
     },
     {
       "name": "aut_complete",

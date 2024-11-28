@@ -1,10 +1,10 @@
 import { logger, SizeConstant, Strings, toast } from 'common';
 import {
-  Icon,
-  NavigationTitle,
-  PasteboardAuthorizeDialog,
-  PasteboardAuthorizeDialogOptions,
-  SendRequestDialog
+    Icon,
+    NavigationTitle,
+    PasteboardAuthorizeDialog,
+    PasteboardAuthorizeDialogOptions,
+    SendRequestDialog
 } from '../../../../components';
 import { DeviceModel } from '../../../../model/DeviceModel';
 import { DeviceProvider } from '../../../../utils/DeviceProvider';
@@ -13,7 +13,7 @@ import { SelectorButton } from './SelectorButton';
 import { DeviceItem } from '../../../../components/DeviceItem';
 import { picker } from '@kit.CoreFileKit';
 import { SelectedFiles } from './SelctedFiles';
-import { FileProvider, ObservedArray, Routers } from '../../../../utils';
+import { FileProvider, ObservedArray } from '../../../../utils';
 import { FileInfoModel } from '../../../../model';
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
 import { pasteboard } from '@kit.BasicServicesKit';
@@ -131,13 +131,17 @@ export struct Send {
                         },
                       })
                     } else {
+                      if (item.protocol === 'https') {
+                        toast.show('对方开启了加密，当前客户端暂不支持加密传输')
+                        return
+                      }
                       this.toDevice = item
                       this.mSendFileRequestDialog?.open()
                     }
                   })
               }
             }, (item: DeviceModel, index: number) => `${item.key}_${index}`)
-            ListItem(){
+            ListItem() {
               Footer()
             }
           }

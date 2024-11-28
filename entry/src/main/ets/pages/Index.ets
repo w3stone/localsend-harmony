@@ -7,6 +7,7 @@ import { ConfigurationConstant } from '@kit.AbilityKit';
 import { EditorPage } from './editor';
 import { DeveloperTools } from './devtools';
 import { Question } from './question/Question';
+import { ReceiveSetting } from './receive/ReceiveSetting';
 
 @Entry
 @Component
@@ -22,6 +23,8 @@ struct Index {
       Index()
     } else if (name == Routers.TRANSFER_PAGE) {
       TransferPage()
+    } else if (name == Routers.RECEIVE_SETTING) {
+      ReceiveSetting()
     } else if (name == Routers.HISTORY) {
       HistoryPage()
     } else if (name == Routers.EDIT_PAGE) {

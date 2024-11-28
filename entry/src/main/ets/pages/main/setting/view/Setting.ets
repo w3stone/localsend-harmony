@@ -11,6 +11,9 @@ import { ServiceAction } from './ServiceAction';
 import { AliasAction } from './AliasAction';
 import { InputAction } from './InputAction';
 import { DeviceTypeAction } from './DeviceTypeAction';
+import { inputMethod } from '@kit.IMEKit';
+import { DialogHelper } from '@pura/harmony-dialog';
+import { DialogAction } from '@pura/harmony-utils/src/main/ets/entity/constraint';
 
 @Component
 export struct Setting {
@@ -26,6 +29,8 @@ export struct Setting {
   @StorageLink(Keys.DEVICE_MODE) deviceMode: string = ''
   @State port: string = `${AppStorage.get(Keys.PORT)}`
   @StorageLink(Keys.MULTICAST_ADDRESS) multicast: string = ''
+  @State isInputFocused: boolean = false
+  @StorageLink(Keys.SAVE_RECEIVE_RECORD) isSaveReceiveRecord: boolean = false
 
   build() {
     // 卡片折叠态，展开态的共同父组件
@@ -86,9 +91,28 @@ export struct Setting {
                 ToggleButton({
                   isOn: Strings.isNotEmpty(this.pin),
                   onToggleSwitched: (event: ToggleSwitchedEvent, isFromUser: boolean) => {
-                    if (event.isOn && isFromUser) {
-                      toast.show('暂时不支持PIN')
-                      event.off()
+                    if (isFromUser) {
+                      if (event.isOn) {
+                        DialogHelper.showTextInputDialog({
+                          title: $r('app.string.enter_pin'),
+                          text: this.pin,
+                          inputBorder: { radius: SizeConstant.RADIUS_M },
+                          onAction: (action: DialogAction, _: string, content: string) => {
+                            if (action === DialogAction.TWO) {
+                              if (this.pin != content) {
+                                this.pin = content
+                              }
+                            }
+                          },
+                          onDidDisappear: () => {
+                            if (!this.pin) {
+                              event.off()
+                            }
+                          }
+                        })
+                      } else {
+                        this.pin = undefined
+                      }
                     }
                   }
                 })
@@ -108,11 +132,10 @@ export struct Setting {
 
               SettingItem({ text: $r('app.string.save_to_history') }) {
                 ToggleButton({
-                  isOn: false,
+                  isOn: this.isSaveReceiveRecord,
                   onToggleSwitched: (event: ToggleSwitchedEvent, isFromUser: boolean) => {
                     if (event.isOn && isFromUser) {
-                      toast.show('待实现')
-                      event.off()
+                      this.isSaveReceiveRecord = event.isOn
                     }
                   }
                 })
@@ -231,7 +254,7 @@ export struct Setting {
               SettingItem({ text: '开发者工具' }) {
                 Button('打开', { buttonStyle: ButtonStyleMode.TEXTUAL })
                   .onClick(() => {
-                    this.pages.pushDestination({name: Routers.DEVELOPER_TOOLS})
+                    this.pages.pushDestination({ name: Routers.DEVELOPER_TOOLS })
                   })
               }
             }
@@ -242,6 +265,15 @@ export struct Setting {
           }
           .constraintSize({ minHeight: '100%' })
           .padding(SizeConstant.SPACE_L)
+          .onFocus(() => {
+            this.isInputFocused = true
+          })
+          .onTouch((event: TouchEvent) => {
+            if (event.type === TouchType.Down && this.isInputFocused) {
+              this.isInputFocused = false
+              inputMethod.getController().stopInputSession()
+            }
+          })
         }
         .width('100%')
         .height('100%')

@@ -46,7 +46,7 @@ export class WebClient {
       })
   }
 
-  static async prepareUpload(target: DeviceModel, files: Array<FileInfoModel>,
+  static async prepareUpload(target: DeviceModel, files: Array<FileInfoModel>, pin: string | undefined,
     callback: (term: Terminator) => void): Promise<PrepareTransferModel> {
     if (!target.hostname) {
       return Promise.reject('invalid hostname')
@@ -62,12 +62,8 @@ export class WebClient {
       files: filesMap
     }
     logger.info(TAG, `--->>> prepare-upload: ${JSON.stringify(body)}`)
-    return await HttpRequest.post<PrepareTransferModel>(
-      WebClient.getCombinedURL(target.hostname, target.port, ApiConstant.PREPARE_UPLOAD),
-      body,
-      ContentType.APPLICATION_JSON,
-      callback
-    )
+    const url: string = `${WebClient.getCombinedURL(target.hostname, target.port, ApiConstant.PREPARE_UPLOAD)}${(pin) ? '?pin=' + pin : ''}`
+    return await HttpRequest.post<PrepareTransferModel>(url, body, ContentType.APPLICATION_JSON, callback)
   }
 
   static async cancel(target: DeviceModel, sessionId: string): Promise<void> {
@@ -112,7 +108,8 @@ export class WebClient {
           const speed = ((pending.size / (1024 * 1024)) / (consumed / 1000)).toFixed(2) //单位: MB/s
           const partsStr = `${parts / 1024} KB`
           const fileSize = FileProvider.formatBytes(pending.size)
-          logger.info(TAG,`文件上传完成 分片长度: ${partsStr} 文件大小: ${pending.size} => ${fileSize} 上传耗时: ${consumed}ms 平均上传速度: ${speed}`)
+          logger.info(TAG,
+            `文件上传完成 分片长度: ${partsStr} 文件大小: ${pending.size} => ${fileSize} 上传耗时: ${consumed}ms 平均上传速度: ${speed}`)
         }
       }
     } finally {

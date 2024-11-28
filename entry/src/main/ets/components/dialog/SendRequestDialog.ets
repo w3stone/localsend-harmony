@@ -2,7 +2,7 @@ import { DeviceModel, FileInfoModel, PrepareTransferModel, TransferPageParam } f
 import { DeviceItem, Icon, IconButton } from '..'
 import { DeviceProvider, Routers } from '../../utils'
 import { Errors, logger, SizeConstant } from 'common'
-import { AnimationHelper } from '@pura/harmony-dialog'
+import { AnimationHelper, DialogAction, DialogHelper } from '@pura/harmony-dialog'
 import { WebClient } from '../../service/WebClient'
 import { HttpRequestError, Terminator } from '../../http'
 
@@ -17,6 +17,8 @@ export struct SendRequestDialog {
   @State isComplete: boolean = false
   @State sessionId: string = ''
   @State terminate: Terminator | null = null
+  @State pin: string = ''
+  @State isInvalidPin: boolean = false
 
   build() {
     Column() {
@@ -73,7 +75,7 @@ export struct SendRequestDialog {
 
   sendPrepareUpload() {
     if (this.target && this.files.length > 0) {
-      WebClient.prepareUpload(this.target, this.files, (terminate: Terminator) => this.terminate = terminate)
+      WebClient.prepareUpload(this.target, this.files, this.pin, (terminate: Terminator) => this.terminate = terminate)
         .then((result: PrepareTransferModel) => {
           this.sessionId = result.sessionId
           const parma = new TransferPageParam(true, this.files)
@@ -85,7 +87,29 @@ export struct SendRequestDialog {
         })
         .catch((reason: object) => {
           if (reason instanceof HttpRequestError) {
-            if (reason.status === 403) {
+            if (reason.status === 401) {
+              if (this.pin) {
+                this.isInvalidPin = true
+              }
+              DialogHelper.showTextInputDialog({
+                title: $r('app.string.enter_pin'),
+                text: '',
+                secondaryTitle: this.isInvalidPin ? $r('app.string.invalid_pin') : '',
+                inputBorder: { radius: SizeConstant.RADIUS_M },
+                onAction: (action: DialogAction, _: string, content: string) => {
+                  if (action === DialogAction.ONE) {
+                    this.isComplete = true
+                    this.message = ''
+                  } else if (action === DialogAction.TWO) {
+                    if (this.pin != content) {
+                      this.pin = content
+                      this.sendPrepareUpload()
+                    }
+                  }
+                },
+                onDidDisappear: () => this.isInvalidPin = false
+              })
+            } else if (reason.status === 403) {
               this.message = $r('app.string.otherside_refused_the_request')
             } else if (reason.status === 409) {
               this.message = $r('app.string.otherside_processing_other_requests')
