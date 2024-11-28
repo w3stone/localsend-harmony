@@ -103,8 +103,8 @@ export class WebClient {
         const url = `${ApiConstant.UPLOAD}?sessionId=${sessionId}&fileId=${pending.id}&token=${fileTokens[pending.id]}`
         const parts = FileProvider.getFilePortLength(pending.size)
         // const parts = (testPartsStart + 25 * index) * 1024
+        // index += 1
         // logger.info(TAG, `开始上传文件 -> 分片长度: ${partsStr} 文件大小: ${fileSize} => ${FileProvider.formatBytes(pending.size)}`)
-        index += 1
         const start = Dates.now()
         await server.upload(parts, url, pending)
         if (!isCanceled) {

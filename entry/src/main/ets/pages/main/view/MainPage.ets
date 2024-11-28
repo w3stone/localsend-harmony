@@ -1,12 +1,12 @@
-import { Screens, SizeConstant } from 'common';
+import { Errors, logger, Screens, SizeConstant } from 'common';
 import { EventBus, EventType, ReceiveResultActionEvent } from '../../../eventbus';
 import {
-  PrepareUploadModel,
-  ReceiveResultAction,
-  ReceiveResultActionType,
-  AutoSaveModel,
-  TransferPageParam,
-  FileInfoModel
+    AutoSaveModel,
+    FileInfoModel,
+    PrepareUploadModel,
+    ReceiveResultAction,
+    ReceiveResultActionType,
+    TransferPageParam
 } from '../../../model';
 
 import { Receive } from '../receive';
@@ -163,19 +163,25 @@ export struct MainPage {
     EventBus.getInstance().unregister(EventType.RECEIVE_SEND_REQUEST)
   }
 
-  toReceivingPage() {
-    if (this.mSendFileRequestData?.files) {
-      const fileIds = Object.keys(this.mSendFileRequestData.files)
-      const files: FileInfoModel[] = []
-      for (const fileId of fileIds) {
-        files.push(this.mSendFileRequestData.files[fileId])
+  async toReceivingPage() {
+    try {
+      if (this.mSendFileRequestData?.files) {
+        const fileIds = Object.keys(this.mSendFileRequestData.files)
+        const files: FileInfoModel[] = []
+        for (const fileId of fileIds) {
+          files.push(this.mSendFileRequestData.files[fileId])
+        }
+        this.pages.pushPathByName(Routers.TRANSFER_PAGE, new TransferPageParam(false, files))
+        this.mSendFileRequestData = null
+        EventBus.getInstance().post(
+          EventType.RECEIVE_SEND_REQUEST_ACTION,
+          ReceiveResultActionEvent({ action: ReceiveResultActionType.ACCEPT } as ReceiveResultAction)
+        )
       }
-      this.pages.pushPathByName(Routers.TRANSFER_PAGE, new TransferPageParam(false, files))
-      this.mSendFileRequestData = null
-      EventBus.getInstance().post(
-        EventType.RECEIVE_SEND_REQUEST_ACTION,
-        ReceiveResultActionEvent({ action: ReceiveResultActionType.ACCEPT } as ReceiveResultAction)
-      )
+    } catch (e) {
+      logger.error('MainPage', `准备接收文件出错: ${Errors.getErrorMessage(e)}`)
+      FileProvider.setTransferComplete()
     }
   }
+
 }

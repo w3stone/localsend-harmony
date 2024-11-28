@@ -289,4 +289,14 @@ export class FileProvider {
       // return 1075 * FileProvider.ONE_KB
     }
   }
+
+  /**
+   * 返回传输速度 单位：字节/s
+   * @param size 传输大小byte
+   * @param duration 传输时间ms
+   * @returns
+   */
+  static getTransferSpeed(size: number, duration: number): number {
+    return Number.parseFloat((size / (duration / 1000)).toFixed(2))
+  }
 }

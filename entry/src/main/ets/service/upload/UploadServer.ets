@@ -45,7 +45,7 @@ export class UploaderServer implements Terminator {
       //已读文件长度
       let readSize: number = 0
       //本次读取到buffer的长度
-      let length: number = await fs.read(file.fd, input, { offset: readSize, length: filePortSize })
+      let length: number = await fs.read(file.fd, input, { offset: 0, length: filePortSize })
       readSize += length
       await this.sendChunked(url, info.size, input, info.fileType, false)
       this.listener({
@@ -53,7 +53,7 @@ export class UploaderServer implements Terminator {
         status: FileTransferStatus.TRANSFERRING,
         progress: readSize,
         total: info.size,
-        speed: this.getSpeed(readSize, Dates.consumed(start))
+        speed: FileProvider.getTransferSpeed(readSize, Dates.consumed(start))
       })
       let lastCallTime: number = 0
       //分片向服务器发送二进制流
@@ -84,7 +84,7 @@ export class UploaderServer implements Terminator {
             status: FileTransferStatus.TRANSFERRING,
             progress: readSize,
             total: info.size,
-            speed: this.getSpeed(readSize, Dates.consumed(start))
+            speed: FileProvider.getTransferSpeed(readSize, Dates.consumed(start))
           })
           lastCallTime = Dates.now()
         }
@@ -105,7 +105,7 @@ export class UploaderServer implements Terminator {
           status: FileTransferStatus.COMPLETED,
           progress: readSize,
           total: info.size,
-          speed: this.getSpeed(readSize, Dates.consumed(start))
+          speed: FileProvider.getTransferSpeed(readSize, Dates.consumed(start))
         })
       }
     } catch (e) {
@@ -216,15 +216,5 @@ export class UploaderServer implements Terminator {
     buffer.from(input).copy(buff, start.length, 0, input.byteLength)
     buff.write(CRLF, start.length + input.byteLength, CRLF.length)
     return buff.buffer
-  }
-
-  /**
-   * 返回传输速度 单位：字节/s
-   * @param size 传输大小byte
-   * @param time 传输时间ms
-   * @returns
-   */
-  private getSpeed(size: number, time: number): number {
-    return Number.parseFloat((size / (time / 1000)).toFixed(2))
   }
 }

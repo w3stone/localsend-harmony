@@ -59,21 +59,6 @@ export struct TransferPage {
         isHideBackButton: true
       }) {
         RelativeContainer() {
-          if (!this.param.isSent) {
-            Text($r('app.string.save_directory', FileProvider.getDefaultFileDir(getContext(this))))
-              .width('100%')
-              .fontColor($r('app.color.on_background'))
-              .fontSize(SizeConstant.TEXT_XL)
-              .textAlign(TextAlign.Start)
-              .alignRules({
-                top: { anchor: "__container__", align: VerticalAlign.Top }
-              })
-              .margin({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
-              .padding({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
-              .onAreaChange((_: Area, newValue: Area) => {
-                this.topPadding = newValue.height
-              })
-          }
 
           List({ space: SizeConstant.SPACE_M }) {
             ForEach(this.param.files, (item: FileInfoModel) => {
@@ -92,6 +77,22 @@ export struct TransferPage {
           })
           .backgroundColor($r('app.color.background'))
           .listDirection(Axis.Vertical)
+
+          Text($r('app.string.save_directory', ''))
+            .width('100%')
+            .fontColor($r('app.color.on_background'))
+            .fontSize(SizeConstant.TEXT_XL)
+            .textAlign(TextAlign.Start)
+            .alignRules({
+              top: { anchor: "__container__", align: VerticalAlign.Top },
+              start: { anchor: "__container__", align: HorizontalAlign.Start }
+            })
+            .margin({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
+            .padding({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
+            .visibility(this.param.isSent ? Visibility.None : Visibility.Visible)
+            .onAreaChange((_: Area, newValue: Area) => {
+              this.topPadding = newValue.height
+            })
 
           // 底部传输进度
           Column() {
@@ -258,9 +259,6 @@ export struct TransferPage {
         .then(() => {
           EventBus.getInstance().post(EventType.UPLOAD_FILE_COMPLETED)
         })
-        .finally(() => {
-          this.allCompleted = true
-        })
     }
   }
 
@@ -276,13 +274,19 @@ export struct TransferPage {
           this.percentage = Number.parseFloat((((this.totalProgress + action.progress) / this.total) * 100).toFixed(2))
         } else if (action.status == FileTransferStatus.COMPLETED) {
           this.totalProgress += action.progress
+          this.progress = 0
         }
         if (action.speed > 0) {
           this.speed = action.speed
         }
         if (action.status != FileTransferStatus.QUEUE && action.status != FileTransferStatus.TRANSFERRING) {
           this.progress = 0
-          this.completed += 1
+          if (this.completed < this.param.files.length) {
+            this.completed += 1
+          }
+          if (!this.allCompleted && this.completed === this.param.files.length) {
+            this.allCompleted = true
+          }
         }
         const index = this.param.files.findIndex((info: FileInfoModel) => info.id === action.fileId)
         if (index >= 0) {

@@ -1,10 +1,11 @@
 import resmgr from '@ohos.resourceManager';
-import { getRandomNextNumber, Objects, Strings } from 'common';
+import { Objects, Strings } from 'common';
 import { DeviceModel } from '../model/DeviceModel';
 import { util } from '@kit.ArkTS';
 import { Keys } from '../constant';
 import { MulticastModel } from '../model';
 import wifiManager from '@ohos.wifiManager';
+import { RandomUtil } from '@pura/harmony-utils';
 
 export class DeviceProvider {
   static REGISTERED_DEVICE_LIST_KEY = "REGISTERED_DEVICE_LIST_KEY"
@@ -17,8 +18,8 @@ export class DeviceProvider {
     let adjectives = resource.getStringArrayValueSync($r('app.strarray.alias_adjectives'))
     let fruits = resource.getStringArrayValueSync($r('app.strarray.alias_fruits'))
 
-    let adjective = adjectives[getRandomNextNumber(0, adjectives.length)]
-    let fruit = fruits[getRandomNextNumber(0, fruits.length)]
+    let adjective = adjectives[RandomUtil.getRandomInt(0, adjectives.length)]
+    let fruit = fruits[RandomUtil.getRandomInt(0, fruits.length)]
 
     let alias = resource.getStringSync($r('app.string.alias_combination'))
     return Strings.formatString(alias, adjective, fruit)

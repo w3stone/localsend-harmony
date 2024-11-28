@@ -145,6 +145,7 @@ export struct Receive {
   }
 
   aboutToAppear(): void {
+    service.setFilesSaveDir(getContext(this).filesDir)
     service.start()
     EventBus.getInstance().on(EventType.SCAN_DEVICE, () => {
       logger.info('ReceivePage', 'receive event: scanning device')

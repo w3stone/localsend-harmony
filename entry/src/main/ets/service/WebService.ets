@@ -20,6 +20,7 @@ import { FileReceptionService } from './FileReceptionService';
 import { createHttpServer, HttpServer } from 'serve/src/main/ets/http/HttpServer';
 import { HttpExchange } from 'serve/src/main/ets/http/HttpExchange';
 import { HttpError } from 'serve';
+import { FlushService } from './download/FlushService';
 
 const TAG: string = "WebService"
 
@@ -28,12 +29,17 @@ const server: HttpServer = createHttpServer()
 
 export class WebService {
   isRunning: boolean = false
+  filesDir: string = ''
   alias: string = ''
   port: number = 53317
   multicast: string = '224.0.0.167'
 
   constructor(alias: string) {
     this.alias = alias
+  }
+
+  setFilesSaveDir(filesDir: string) {
+    this.filesDir = filesDir
   }
 
   async start(): Promise<void> {
@@ -63,7 +69,9 @@ export class WebService {
         .get('/', this.index)
         .post('/api/localsend/v2/register', this.register)
         .post('/api/localsend/v2/prepare-upload', this.prepareUpload)
-        .post('/api/localsend/v2/upload', this.upload)
+        .post('/api/localsend/v2/upload', async (exchange: HttpExchange) => {
+          await this.upload(exchange)
+        })
         .post('/api/localsend/v2/cancel', this.cancel)
         .post('/api/localsend/v2/download', this.download)
         .start()
@@ -173,8 +181,8 @@ export class WebService {
     }
   }
 
-  private upload(exchange: HttpExchange) {
-    logger.info(TAG, `<<<--- upload isEnd: ${exchange.isEnd} url: ${exchange.originalUrl}`)
+  private async upload(exchange: HttpExchange) {
+    logger.info(TAG, `<<<--- upload isEnd: ${exchange.isEnd} headers: ${exchange.getRequestHeaders().toJson()}`)
     const isReceivingFiles = FileProvider.isTransferringNow()
     //当前位处于接收文件状态，直接调用了upload接口
     if (!isReceivingFiles) {
@@ -204,15 +212,30 @@ export class WebService {
       return
     }
 
-    if (exchange.getAttribute('onStream') === undefined) {
-      exchange.setAttribute('onStream', (stream: ArrayBuffer): Promise<void> => {
-        logger.info(TAG, 'on-stream: ' + stream.byteLength)
-        ///save to file
-        return Promise.resolve()
+    if (!exchange.isEnd) {
+      const flush: FlushService = new FlushService(exchange, this.filesDir, info.file)
+      EventBus.getInstance().once(EventType.UPLOAD_FILE_CANCELED, () => {
+        flush.cancel()
+        const target = DeviceProvider.getDevice(exchange.getRemoteAddress()?.address || '')
+        if (target) {
+          WebClient.cancel(target, exchange.getQueryParams('sessionId'))
+          exchange.setStatusCode(409).end("Sender cancels file sending")
+        }
+        EventBus.getInstance().unregister(EventType.UPLOAD_FILE_CANCELED)
       })
-    }
-    if (exchange.isEnd) {
-      exchange.writeJson(new ErrorMessage())
+      if (exchange.getAttribute('on-data') === undefined) {
+        try {
+          exchange.setAttribute('on-data', (buffer: ArrayBuffer, index: number) => {
+            flush.flush({ buffer: buffer, index: index })
+          })
+          exchange.setAttribute('on-end', () => {
+            flush.end()
+          })
+        } catch (e) {
+          exchange.writeError((e instanceof HttpError) ? e : HttpError.error(500))
+          return
+        }
+      }
     }
   }
 
