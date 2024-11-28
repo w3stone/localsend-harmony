@@ -6,6 +6,7 @@ import { Keys } from '../constant';
 import { ConfigurationConstant } from '@kit.AbilityKit';
 import { EditorPage } from './editor';
 import { DeveloperTools } from './devtools';
+import { Question } from './question/Question';
 
 @Entry
 @Component
@@ -25,6 +26,8 @@ struct Index {
       HistoryPage()
     } else if (name == Routers.EDIT_PAGE) {
       EditorPage()
+    } else if (name == Routers.QUESTION_PAGE) {
+      Question()
     } else if (name == Routers.DEVELOPER_TOOLS) {
       DeveloperTools()
     }

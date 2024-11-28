@@ -13,10 +13,11 @@ import { SelectorButton } from './SelectorButton';
 import { DeviceItem } from '../../../../components/DeviceItem';
 import { picker } from '@kit.CoreFileKit';
 import { SelectedFiles } from './SelctedFiles';
-import { FileProvider, ObservedArray } from '../../../../utils';
+import { FileProvider, ObservedArray, Routers } from '../../../../utils';
 import { FileInfoModel } from '../../../../model';
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
 import { pasteboard } from '@kit.BasicServicesKit';
+import { Footer } from './Footer';
 
 @Component
 export struct Send {
@@ -136,12 +137,16 @@ export struct Send {
                   })
               }
             }, (item: DeviceModel, index: number) => `${item.key}_${index}`)
+            ListItem(){
+              Footer()
+            }
           }
           .listDirection(Axis.Vertical)
           .width('100%')
           .layoutWeight(1)
         } else {
           DeviceItem()
+          Footer()
         }
       }
       .alignItems(HorizontalAlign.Start)

@@ -6,5 +6,6 @@ export class Routers {
   static TRANSFER_PAGE = 'TransferPage'
   static HISTORY = 'HISTORY'
   static EDIT_PAGE = 'EDIT_PAGE'
+  static QUESTION_PAGE = 'QUESTION_PAGE'
   static DEVELOPER_TOOLS = 'DEVELOPER_TOOLS'
 }
