@@ -51,7 +51,7 @@ export struct SelectedFiles {
         Button($r('app.string.edit'), { stateEffect: false, buttonStyle: ButtonStyleMode.TEXTUAL })
           .fontColor($r('app.color.on_background'))
           .onClick(() => {
-            this.pages.pushPathByName(Routers.EDIT_PAGE, this.files, (info: PopInfo) => {
+            this.pages.pushPathByName(Routers.EDITOR_PAGE, this.files, (info: PopInfo) => {
               this.files = info.result as ObservedArray<FileInfoModel>
             })
           })

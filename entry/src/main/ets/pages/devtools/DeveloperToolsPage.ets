@@ -9,8 +9,13 @@ import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 
+@Builder
+export function DeveloperToolsPageBuilder() {
+  DeveloperToolsPage()
+}
+
 @Component
-export struct DeveloperTools {
+export struct DeveloperToolsPage {
   @State progress: number = 0
   @State total: number = 5665497088
   @State isCollapsed: boolean = false

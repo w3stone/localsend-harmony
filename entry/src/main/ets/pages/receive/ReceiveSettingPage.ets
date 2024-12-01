@@ -6,8 +6,13 @@ import { ReceiveItem } from './ReceiveItem'
 import { util } from '@kit.ArkTS'
 import { RandomUtil } from '@pura/harmony-utils'
 
+@Builder
+export function ReceiveSettingPageBuilder() {
+  ReceiveSettingPage()
+}
+
 @Component
-export struct ReceiveSetting {
+export struct ReceiveSettingPage {
   @Consume('pages') pages: NavPathStack;
   @State files: ObservedArray<FileInfoModel> = new ObservedArray()
 
@@ -31,7 +36,7 @@ export struct ReceiveSetting {
   }
 
   aboutToAppear(): void {
-    const params: Array<PrepareUploadModel> = this.pages.getParamByName(Routers.RECEIVE_SETTING) as Array<PrepareUploadModel>
+    const params: Array<PrepareUploadModel> = this.pages.getParamByName(Routers.RECEIVE_SETTING_PAGE) as Array<PrepareUploadModel>
     if (params && params.length != 0) {
       // this.param = params[0]
     }

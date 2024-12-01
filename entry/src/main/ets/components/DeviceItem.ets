@@ -1,11 +1,13 @@
 import { SizeConstant } from "common"
 import { DeviceIcon, Icon, LoopImage } from "./"
 import { DeviceModel } from "../model"
+import { curves } from "@kit.ArkUI"
 
 @Component
 export struct DeviceItem {
-  @State device: DeviceModel | undefined = undefined
+  @State device: DeviceModel | undefined | null = undefined
   @Prop favorDisplay: boolean = true
+  @State scaleValue: number = 1
 
   build() {
     Row() {
@@ -56,9 +58,25 @@ export struct DeviceItem {
       }
     }
     .width('100%')
-    .margin({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
+    .height(105)
+    // .margin({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
     .padding(SizeConstant.SPACE_L)
+    .scale({
+      x: this.scaleValue,
+      y: this.scaleValue
+    })
     .borderRadius(SizeConstant.RADIUS_L)
     .backgroundColor($r('app.color.container'))
+    .onTouch((event: TouchEvent) => {
+      if (event.type === TouchType.Down) {
+        animateTo({ curve: curves.interpolatingSpring(0, 1, 350, 35) }, () => {
+          this.scaleValue = 0.95;
+        })
+      } else if (event.type === TouchType.Up || event.type === TouchType.Cancel) {
+        animateTo({ curve: curves.interpolatingSpring(0, 1, 350, 35) }, () => {
+          this.scaleValue = 1;
+        })
+      }
+    })
   }
 }

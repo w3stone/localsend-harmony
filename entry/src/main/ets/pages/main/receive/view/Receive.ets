@@ -30,7 +30,7 @@ export struct Receive {
       Row() {
         Icon({ src: $r('app.media.ic_history'), iconColor: $r('app.color.on_container'), spacing: 2.5, })
           .onClick(() => {
-            this.pages.pushDestination({ name: Routers.HISTORY })
+            this.pages.pushDestination({ name: Routers.HISTORY_PAGE })
           })
         Blank().width(SizeConstant.SPACE_L)
         Icon({ src: $r('app.media.ic_detail'), iconColor: $r('app.color.on_container'), spacing: 2, })

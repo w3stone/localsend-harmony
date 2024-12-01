@@ -15,6 +15,11 @@ import { FileItem } from './FileItem';
 import { EventBus, EventType } from '../../eventbus';
 import { emitter } from '@kit.BasicServicesKit';
 
+@Builder
+export function TransferPageBuilder() {
+  TransferPage()
+}
+
 @Component
 export struct TransferPage {
   @Consume('pages') pages: NavPathStack;

@@ -3,10 +3,11 @@ export class Routers {
   }
 
   static INDEX = 'INDEX'
+  static SEND_REQUEST_PAGE = 'SendRequestPage'
   static TRANSFER_PAGE = 'TransferPage'
-  static HISTORY = 'HISTORY'
-  static RECEIVE_SETTING = 'RECEIVE_SETTING'
-  static EDIT_PAGE = 'EDIT_PAGE'
-  static QUESTION_PAGE = 'QUESTION_PAGE'
-  static DEVELOPER_TOOLS = 'DEVELOPER_TOOLS'
+  static HISTORY_PAGE = 'HistoryPage'
+  static RECEIVE_SETTING_PAGE = 'ReceiveSettingPage'
+  static EDITOR_PAGE = 'EditorPage'
+  static QUESTION_PAGE = 'QuestionPage'
+  static DEVELOPER_TOOLS = 'DeveloperToolsPage'
 }

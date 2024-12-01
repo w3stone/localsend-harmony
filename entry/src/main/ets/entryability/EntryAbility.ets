@@ -6,6 +6,7 @@ import { DialogProvider } from '../utils/DialogProvider';
 import { Keys } from '../constant';
 import { PersistentStorageProvider } from '../utils';
 import { ThemeProvider } from '../theme/ThemeProvider';
+import { WindowUtils } from '../transaction/WindowUtils';
 
 export default class EntryAbility extends UIAbility {
   onCreate(_want: Want, _launchParam: AbilityConstant.LaunchParam): void {
@@ -14,6 +15,9 @@ export default class EntryAbility extends UIAbility {
 
   onWindowStageCreate(windowStage: window.WindowStage): void {
     AppStorage.setOrCreate(Keys.WINDOW_STAGE, windowStage)
+
+    WindowUtils.onWindowStageCreate(windowStage)
+
     windowStage.loadContent('pages/Index', (err) => {
       if (err.code) {
         return

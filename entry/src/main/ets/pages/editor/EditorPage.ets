@@ -4,6 +4,11 @@ import { FileInfoModel } from '../../model';
 import { FileProvider, ObservedArray, Routers } from '../../utils';
 import { EditorItem } from './EditorItem';
 
+@Builder
+export function EditorPageBuilder() {
+  EditorPage()
+}
+
 @Component
 export struct EditorPage {
   @Consume('pages') pages: NavPathStack
@@ -69,7 +74,7 @@ export struct EditorPage {
 
   aboutToAppear(): void {
     const params: Array<ObservedArray<FileInfoModel>> =
-      this.pages.getParamByName(Routers.EDIT_PAGE) as Array<ObservedArray<FileInfoModel>>
+      this.pages.getParamByName(Routers.EDITOR_PAGE) as Array<ObservedArray<FileInfoModel>>
     this.files = params[0]
   }
 

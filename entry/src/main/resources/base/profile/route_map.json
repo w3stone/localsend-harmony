@@ -1,0 +1,33 @@
+{
+  "routerMap": [
+    {
+      "name": "SendRequestPage",
+      "pageSourceFile": "src/main/ets/pages/send/SendRequestPage.ets",
+      "buildFunction": "SendRequestPageBuilder"
+    },{
+      "name": "TransferPage",
+      "pageSourceFile": "src/main/ets/pages/transfer/TransferPage.ets",
+      "buildFunction": "TransferPageBuilder"
+    },{
+      "name": "ReceiveSettingPage",
+      "pageSourceFile": "src/main/ets/pages/receive/ReceiveSettingPage.ets",
+      "buildFunction": "ReceiveSettingPageBuilder"
+    },{
+      "name": "HistoryPage",
+      "pageSourceFile": "src/main/ets/pages/history/HistoryPage.ets",
+      "buildFunction": "HistoryPageBuilder"
+    },{
+      "name": "EditorPage",
+      "pageSourceFile": "src/main/ets/pages/editor/EditorPage.ets",
+      "buildFunction": "EditorPageBuilder"
+    },{
+      "name": "QuestionPage",
+      "pageSourceFile": "src/main/ets/pages/question/QuestionPage.ets",
+      "buildFunction": "QuestionPageBuilder"
+    },{
+      "name": "DeveloperToolsPage",
+      "pageSourceFile": "src/main/ets/pages/devtools/DeveloperToolsPage.ets",
+      "buildFunction": "DeveloperToolsPageBuilder"
+    }
+  ]
+}

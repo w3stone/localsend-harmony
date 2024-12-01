@@ -1,11 +1,5 @@
 import { logger, SizeConstant, Strings, toast } from 'common';
-import {
-    Icon,
-    NavigationTitle,
-    PasteboardAuthorizeDialog,
-    PasteboardAuthorizeDialogOptions,
-    SendRequestDialog
-} from '../../../../components';
+import { Icon, NavigationTitle, PasteboardAuthorizeDialog, PasteboardAuthorizeDialogOptions } from '../../../../components';
 import { DeviceModel } from '../../../../model/DeviceModel';
 import { DeviceProvider } from '../../../../utils/DeviceProvider';
 import { EventBus, EventType } from '../../../../eventbus';
@@ -13,30 +7,39 @@ import { SelectorButton } from './SelectorButton';
 import { DeviceItem } from '../../../../components/DeviceItem';
 import { picker } from '@kit.CoreFileKit';
 import { SelectedFiles } from './SelctedFiles';
-import { FileProvider, ObservedArray } from '../../../../utils';
+import { FileProvider, ObservedArray, Routers } from '../../../../utils';
 import { FileInfoModel } from '../../../../model';
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { Footer } from './Footer';
+import { SendRequestParams } from '../../../send';
+import { CardUtil } from '../../../../transaction/CardUtil';
+import { componentSnapshot } from '@kit.ArkUI';
+import { image } from '@kit.ImageKit';
+import { SnapShotImage } from '../../../../transaction/SnapShotImage';
 
 @Component
 export struct Send {
+  @Consume('pages') pages: NavPathStack
   @StorageLink(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) allDevice: DeviceModel[] = []
   @State selectedFiles: ObservedArray<FileInfoModel> = []
-  @State toDevice: DeviceModel | null = null
-  mSendFileRequestDialog: CustomDialogController | null = new CustomDialogController({
-    width: '100%',
-    height: '100%',
-    offset: {
-      dx: 0,
-      dy: 0
-    },
-    builder: SendRequestDialog({
-      files: this.selectedFiles,
-      target: this.toDevice,
-    }),
-  })
+  // @State toDevice: DeviceModel | null = null
+  // mSendFileRequestDialog: CustomDialogController | null = new CustomDialogController({
+  //   width: '100%',
+  //   height: '100%',
+  //   offset: {
+  //     dx: 0,
+  //     dy: 0
+  //   },
+  //   builder: SendRequestDialog({
+  //     files: this.selectedFiles,
+  //     target: this.toDevice,
+  //   }),
+  // })
   mPasteboardAuthorizeDialogId: string | null = null
+  @State mTouchedDeviceIndex: number = -1
+  @State mDeviceItemScale: number = 1
+  @State clickDeviceIndex: number = -1
 
   build() {
     NavigationTitle({ title: $r('app.string.select'), isHideBackButton: true }) {
@@ -117,27 +120,13 @@ export struct Send {
 
         //设备列表
         if (this.allDevice.length > 0) {
-          List() {
-            ForEach(this.allDevice, (item: DeviceModel) => {
+          List({space:SizeConstant.SPACE_L}) {
+            ForEach(this.allDevice, (item: DeviceModel, index: number) => {
               ListItem() {
                 DeviceItem({ device: item })
+                  .id(CardUtil.getPostPageImageId(index.toString()))
                   .onClick(() => {
-                    if (!this.selectedFiles || this.selectedFiles.length == 0) {
-                      DialogHelper.showAlertDialog({
-                        title: $r('app.string.unselected_file'),
-                        content: $r('app.string.unselected_file_text'),
-                        secondaryButton: $r('app.string.close'),
-                        onAction: () => {
-                        },
-                      })
-                    } else {
-                      if (item.protocol === 'https') {
-                        toast.show('对方开启了加密，当前客户端暂不支持加密传输')
-                        return
-                      }
-                      this.toDevice = item
-                      this.mSendFileRequestDialog?.open()
-                    }
+                    this.onSendToDeviceClick(item, index)
                   })
               }
             }, (item: DeviceModel, index: number) => `${item.key}_${index}`)
@@ -145,6 +134,10 @@ export struct Send {
               Footer()
             }
           }
+          .padding({
+            top: SizeConstant.SPACE_L,
+            bottom: SizeConstant.SPACE_L
+          })
           .listDirection(Axis.Vertical)
           .width('100%')
           .layoutWeight(1)
@@ -220,6 +213,48 @@ export struct Send {
         },
       }
     )
+  }
+
+  onSendToDeviceClick(item: DeviceModel, index: number) {
+    if (!this.selectedFiles || this.selectedFiles.length == 0) {
+      DialogHelper.showAlertDialog({
+        title: $r('app.string.unselected_file'),
+        content: $r('app.string.unselected_file_text'),
+        secondaryButton: $r('app.string.close'),
+        onAction: () => {
+        },
+      })
+    } else {
+      if (item.protocol === 'https') {
+        toast.show('对方开启了加密，当前客户端暂不支持加密传输')
+        return
+      }
+      componentSnapshot.get(CardUtil.getPostPageImageId(index.toString()), (error: Error, pixelMap: image.PixelMap) => {
+        if (error) {
+          // logger.info('Send', 'CardLongTakePageOne componentSnapshot.get error, reason: ' + JSON.stringify(error));
+          // If the screenshot fails, go to the default left/right transition. In this case, the pop-up page will not receive clickedComponentId parameter, and the registration process will not proceed.
+          // At that time from and to the animation are undefined, will go in customNavContentTransition transitions by default.
+          this.pages.pushPath({ name: Routers.SEND_REQUEST_PAGE, param: new SendRequestParams(this.selectedFiles, item) })
+          return;
+        } else {
+          // logger.info('Send', 'CardLongTakePageOne componentSnapshot.get success!');
+          // If the screenshot is successful, then go to a custom mirror in the end transition.
+          this.clickDeviceIndex = index
+          SnapShotImage.pixelMap = pixelMap;
+          this.pages.pushPath({
+            name: Routers.SEND_REQUEST_PAGE,
+            param: new SendRequestParams(this.selectedFiles, item, CardUtil.getPostPageImageId(index.toString()), () => {
+              this.doFinishTransition();
+            })
+          })
+          //hide item
+        }
+      })
+    }
+  }
+
+  private doFinishTransition(): void {
+    //display item
   }
 
   aboutToDisappear(): void {

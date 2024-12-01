@@ -2,8 +2,13 @@ import { Screens, SizeConstant } from 'common'
 import { NavigationTitle } from '../../components'
 import { QuestionCard } from './QuestionCard'
 
+@Builder
+export function QuestionPageBuilder() {
+  QuestionPage()
+}
+
 @Component
-export struct Question {
+export struct QuestionPage {
   build() {
     NavDestination() {
       NavigationTitle({ title: $r('app.string.troubleshooting') }) {

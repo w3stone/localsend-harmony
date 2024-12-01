@@ -1,1 +1,1 @@
-export * from './DeveloperTools'
+export * from './DeveloperToolsPage'
