@@ -54,7 +54,6 @@ export class WebClient {
     const filesMap: FileInfoKeyMap = {}
     for (const file of files) {
       filesMap[file.id] = Objects.clone({}, file)
-      filesMap[file.id].filePath = undefined
       filesMap[file.id].metadata = undefined
     }
     const body: PrepareUploadModel = {

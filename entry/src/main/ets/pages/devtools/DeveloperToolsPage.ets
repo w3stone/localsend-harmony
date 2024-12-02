@@ -98,6 +98,17 @@ export struct DeveloperToolsPage {
                   this.getFiles()
                 })
               }
+
+              Blank().height(SizeConstant.SPACE_M)
+              Row() {
+                Button('获取发送缓存列表').onClick(() => {
+                  this.getCacheFiles()
+                })
+                Blank().width(SizeConstant.SPACE_M)
+                Button('清除缓存列表').onClick(() => {
+                  this.clearCacheFiles()
+                })
+              }
             }
             .padding(SizeConstant.SPACE_M)
             .borderRadius(SizeConstant.RADIUS_M)
@@ -120,6 +131,35 @@ export struct DeveloperToolsPage {
       .then((files: string[]) => {
         this.fileNames = files
         console.log(`files: ${JSON.stringify(files)}`)
+      })
+  }
+
+  getCacheFiles() {
+    console.info(`cacheDir: ${getContext(this).cacheDir}\nfilesDir: ${getContext(this).filesDir}`)
+    const dir: string = `${getContext(this).cacheDir}/pending_to_send`
+    fs.access(dir, fs.AccessModeType.EXIST)
+      .then((exist) => {
+        if (exist) {
+          return fs.listFile(dir)
+        } else {
+          return Promise.reject('dir not exist')
+        }
+      })
+      .then((files: string[]) => {
+        console.log(`files: ${JSON.stringify(files)}`)
+      })
+      .catch((err: object) => {
+        console.error(`files: ${Errors.getErrorMessage(err)}`)
+      })
+  }
+
+  clearCacheFiles() {
+    FileProvider.clearMediaCache(getContext(this))
+      .then<void>(() => {
+        this.getCacheFiles()
+      })
+      .catch((err: object) => {
+        console.error(`clearCacheFiles error: ${Errors.getErrorMessage(err)}`)
       })
   }
 
@@ -235,7 +275,7 @@ export struct DeveloperToolsPage {
       let directoryUri = fileUriObject.getFullDirectoryUri();
       const dirPath = getContext(this).filesDir;
       let destPath = dirPath + directoryUri;
-      fs.copyDir(getContext(this).filesDir + '/received', destPath, fs.OpenMode.READ_WRITE ).then(() => {
+      fs.copyDir(getContext(this).filesDir + '/received', destPath, fs.OpenMode.READ_WRITE).then(() => {
         console.info("copy directory succeed");
       }).catch((err: BusinessError) => {
         console.error(`copy directory failed with error message: ${err.message} , error code: ${err.code}`);

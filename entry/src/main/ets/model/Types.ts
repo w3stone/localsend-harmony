@@ -6,8 +6,11 @@ export interface FileInfoModel {
   sha256?: string
   preview?: string
   metadata?: FileMetadata
-  filePath?: string | undefined //仅发送时有值
   status?: number
+}
+
+export interface PendingSendFile extends FileInfoModel {
+  filePath?: string | undefined //仅发送时有值
 }
 
 export interface FileMetadata {

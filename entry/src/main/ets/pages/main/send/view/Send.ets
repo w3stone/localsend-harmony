@@ -48,7 +48,7 @@ export struct Send {
           SelectedFiles({
             files: this.selectedFiles,
             onAppendClick: () => {
-              this.addSelectFile()
+              this.addSelectFile(getContext(this))
             }
           })
         } else {
@@ -56,17 +56,23 @@ export struct Send {
             SelectorButton({ text: $r('app.string.file'), icon: $r('app.media.ic_file') })
               .layoutWeight(1)
               .onClick(() => {
-                this.addSelectFile()
+                this.addSelectFile(getContext(this))
               })
             Blank().width(SizeConstant.SPACE_M)
-            if (canIUse('SystemCapability.FileManagement.UserFileService.FolderSelection')) {
-              SelectorButton({ text: $r('app.string.folder'), icon: $r('app.media.ic_folder_filled') })
-                .layoutWeight(1)
-                .onClick(() => {
-                  this.addSelectFile(picker.DocumentSelectMode.FOLDER)
-                })
-              Blank().width(SizeConstant.SPACE_M)
-            }
+            // if (canIUse('SystemCapability.FileManagement.UserFileService.FolderSelection')) {
+            //   SelectorButton({ text: $r('app.string.folder'), icon: $r('app.media.ic_folder_filled') })
+            //     .layoutWeight(1)
+            //     .onClick(() => {
+            //       this.addSelectFile(getContext(this),picker.DocumentSelectMode.FOLDER)
+            //     })
+            //   Blank().width(SizeConstant.SPACE_M)
+            // }
+            SelectorButton({ text: $r('app.string.media'), icon: $r('app.media.ic_file') })
+              .layoutWeight(1)
+              .onClick(() => {
+                this.addMediaClick(getContext(this))
+              })
+            Blank().width(SizeConstant.SPACE_M)
             SelectorButton({ text: $r('app.string.text'), icon: $r('app.media.ic_text_filled') })
               .layoutWeight(1)
               .onClick(() => {
@@ -120,7 +126,7 @@ export struct Send {
 
         //设备列表
         if (this.allDevice.length > 0) {
-          List({space:SizeConstant.SPACE_L}) {
+          List({ space: SizeConstant.SPACE_L }) {
             ForEach(this.allDevice, (item: DeviceModel, index: number) => {
               ListItem() {
                 DeviceItem({ device: item })
@@ -161,8 +167,18 @@ export struct Send {
     })
   }
 
-  addSelectFile(model: picker.DocumentSelectMode | undefined = undefined) {
-    FileProvider.selectFile(this.selectedFiles, model)
+  addSelectFile(context: Context) {
+    FileProvider.selectFile(context, this.selectedFiles)
+      .then((files: FileInfoModel[]) => {
+        this.selectedFiles.push(...files)
+      })
+      .catch((e: Error) => {
+        logger.info('Send', `selected files error => ${e.message}\n${e.stack}`)
+      })
+  }
+
+  addMediaClick(context: Context) {
+    FileProvider.getMedia(context, this.selectedFiles)
       .then((files: FileInfoModel[]) => {
         this.selectedFiles.push(...files)
       })

@@ -33,6 +33,10 @@
       "value": "文件"
     },
     {
+      "name": "media",
+      "value": "媒体"
+    },
+    {
       "name": "folder",
       "value": "文件夹"
     },

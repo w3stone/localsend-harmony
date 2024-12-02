@@ -89,13 +89,13 @@ export struct SelectedFiles {
     return FileProvider.formatBytes(size)
   }
 
-  addSelectFile(model: picker.DocumentSelectMode | undefined = undefined) {
-    FileProvider.selectFile(this.files, model)
-      .then((files: FileInfoModel[]) => {
-        this.files.push(...files)
-      })
-      .catch((e: Error) => {
-        logger.info('Send', `selected files error => ${e.message}\n${e.stack}`)
-      })
-  }
+  // addSelectFile(context: Context, model: picker.DocumentSelectMode | undefined = undefined) {
+  //   FileProvider.selectFile(context,this.files, model)
+  //     .then((files: FileInfoModel[]) => {
+  //       this.files.push(...files)
+  //     })
+  //     .catch((e: Error) => {
+  //       logger.info('Send', `selected files error => ${e.message}\n${e.stack}`)
+  //     })
+  // }
 }

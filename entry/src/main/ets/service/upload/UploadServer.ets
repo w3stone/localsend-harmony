@@ -1,5 +1,5 @@
 import { socket } from '@kit.NetworkKit';
-import { FileInfoModel, FileTransferStatus, TransferProgressChangedAction } from '../../model';
+import { FileInfoModel, FileTransferStatus, PendingSendFile, TransferProgressChangedAction } from '../../model';
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { Errors, logger } from 'common';
 import { buffer } from '@kit.ArkTS';
@@ -33,7 +33,7 @@ export class UploaderServer implements Terminator {
    * @param callback 用于返回上传进度的回调函数
    * @returns
    */
-  async upload(filePortSize: number, url: string, info: FileInfoModel): Promise<void> {
+  async upload(filePortSize: number, url: string, info: PendingSendFile): Promise<void> {
     let file: fs.File | null = null
     try {
       if (!info.filePath) {

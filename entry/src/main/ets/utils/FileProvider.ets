@@ -1,11 +1,11 @@
-import { FileInfoModel, FileReceiveQueueModel, PrepareTransferModel, PrepareUploadModel } from '../model';
+import { FileInfoModel, FileReceiveQueueModel, PendingSendFile, PrepareTransferModel, PrepareUploadModel } from '../model';
 import { Keys } from '../constant';
-import { logger, Strings } from 'common';
+import { Errors, logger, Strings } from 'common';
 import { fileUri, fileIo as fs, picker } from '@kit.CoreFileKit';
-import { PickerUtil } from '@pura/harmony-utils';
 import { buffer, util } from '@kit.ArkTS';
 import { mime } from './mime';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { photoAccessHelper } from '@kit.MediaLibraryKit';
 
 const TAG = 'FileProvider'
 
@@ -14,6 +14,7 @@ export class FileProvider {
   private static ONE_KB: number = 1024
   private static ONE_MB: number = FileProvider.ONE_KB * 1024
   private static ONE_GB: number = FileProvider.ONE_MB * 1024
+  private static PENDING_TO_SEND_DIR = '/pending_to_send'
 
   private constructor() {
   }
@@ -186,26 +187,67 @@ export class FileProvider {
     return context.filesDir
   }
 
+  // /**
+  //  * 选择文件
+  //  * @param selectMode
+  //  * @returns
+  //  */
+  // static async selectFile(context: Context, selected: PendingSendFile[],
+  //   selectMode: picker.DocumentSelectMode | undefined): Promise<Array<PendingSendFile>> {
+  //   try {
+  //     const options = new picker.DocumentSelectOptions()
+  //     options.maxSelectNumber = 5
+  //     if (canIUse('SystemCapability.FileManagement.UserFileService.FolderSelection')) {
+  //       options.selectMode = selectMode || picker.DocumentSelectMode.FILE
+  //     } else {
+  //       logger.info(TAG, "该设备不支持SystemCapability.FileManagement.UserFileService.FolderSelection");
+  //     }
+  //     const uris = await PickerUtil.selectDocument(options)
+  //     const files: PendingSendFile[] = []
+  //     let stat: fs.Stat
+  //     for (const uri of uris) {
+  //       const path = new fileUri.FileUri(uri).path
+  //       const findIndex = selected.findIndex((file: PendingSendFile, _: number) => file.filePath === path)
+  //       if (findIndex >= 0) {
+  //         continue
+  //       }
+  //       stat = await fs.stat(uri)
+  //       files.push({
+  //         id: util.generateRandomUUID(),
+  //         fileName: FileProvider.getFileName(path),
+  //         size: stat.size,
+  //         fileType: mime.getType(path) || "",
+  //         // metadata: {
+  //         //   modified: (stat.mtime > 0) ? DateUtil.getFormatDate(stat.mtime).toUTCString() : undefined,
+  //         //   accessed: (stat.atime > 0) ? DateUtil.getFormatDate(stat.atime).toUTCString() : undefined
+  //         // },
+  //         // filePath: path
+  //         filePath: uri
+  //       })
+  //     }
+  //     return files
+  //   } catch (e) {
+  //     logger.info(TAG, `select file error: ${e.message}\n${e.stack}`)
+  //   }
+  //   return []
+  // }
   /**
    * 选择文件
    * @param selectMode
    * @returns
    */
-  static async selectFile(selected: FileInfoModel[], selectMode: picker.DocumentSelectMode | undefined): Promise<Array<FileInfoModel>> {
+  static async selectFile(context: Context, selected: PendingSendFile[]): Promise<Array<PendingSendFile>> {
     try {
       const options = new picker.DocumentSelectOptions()
-      options.maxSelectNumber = 20
-      if (canIUse('SystemCapability.FileManagement.UserFileService.FolderSelection')) {
-        options.selectMode = selectMode || picker.DocumentSelectMode.FILE
-      } else {
-        logger.info(TAG, "该设备不支持SystemCapability.FileManagement.UserFileService.FolderSelection");
-      }
-      const uris = await PickerUtil.selectDocument(options)
-      const files: FileInfoModel[] = []
+      options.maxSelectNumber = 5;
+      // options.fileSuffixFilters = ['*/*']
+
+      const uris = await new picker.DocumentViewPicker(context).select(options)
+      const files: PendingSendFile[] = []
       let stat: fs.Stat
       for (const uri of uris) {
         const path = new fileUri.FileUri(uri).path
-        const findIndex = selected.findIndex((file: FileInfoModel, _: number) => file.filePath === path)
+        const findIndex = selected.findIndex((file: PendingSendFile, _: number) => file.filePath === path)
         if (findIndex >= 0) {
           continue
         }
@@ -228,6 +270,89 @@ export class FileProvider {
       logger.info(TAG, `select file error: ${e.message}\n${e.stack}`)
     }
     return []
+  }
+
+  static async getMedia(context: Context, selected: PendingSendFile[]): Promise<Array<PendingSendFile>> {
+    try {
+      const photoSelectOptions = new photoAccessHelper.PhotoSelectOptions();
+      photoSelectOptions.maxSelectNumber = 5;
+      photoSelectOptions.MIMEType = photoAccessHelper.PhotoViewMIMETypes.IMAGE_VIDEO_TYPE
+
+      const result: photoAccessHelper.PhotoSelectResult = await new photoAccessHelper.PhotoViewPicker().select(photoSelectOptions)
+      const uris = result.photoUris
+      const files: PendingSendFile[] = []
+      let stat: fs.Stat
+      for (const uri of uris) {
+        // const path = new fileUri.FileUri(uri).path
+        // console.info(`uri: ${uri}\npath: ${path}`)
+        const newFilePath = await FileProvider.copyMediaFileToCache(context, uri)
+        const findIndex = selected.findIndex((file: PendingSendFile, _: number) => file.filePath === newFilePath)
+        if (findIndex >= 0) {
+          continue
+        }
+        stat = await fs.stat(newFilePath)
+        files.push({
+          id: util.generateRandomUUID(),
+          fileName: FileProvider.getFileName(newFilePath),
+          size: stat.size,
+          fileType: mime.getType(newFilePath) || "",
+          // metadata: {
+          //   modified: (stat.mtime > 0) ? DateUtil.getFormatDate(stat.mtime).toUTCString() : undefined,
+          //   accessed: (stat.atime > 0) ? DateUtil.getFormatDate(stat.atime).toUTCString() : undefined
+          // },
+          // filePath: path
+          filePath: newFilePath
+        })
+      }
+      return files
+    } catch (e) {
+      logger.info(TAG, `select file error: ${e.message}\n${e.stack}`)
+    }
+    return []
+  }
+
+  private static async copyMediaFileToCache(context: Context, uri: string): Promise<string> {
+    const dir: string = `${context.cacheDir}/${FileProvider.PENDING_TO_SEND_DIR}`
+    const suffixIndex = uri.lastIndexOf('/')
+    const copyFilePath = `${dir}${uri.substring(suffixIndex)}`
+    let file: fs.File | undefined
+    try {
+      const accessible = await fs.access(dir, fs.AccessModeType.EXIST)
+      if (!accessible) {
+        await fs.mkdir(dir)
+      }
+      file = await fs.open(uri, fs.OpenMode.READ_ONLY)
+      await fs.copyFile(file.fd, `${dir}${uri.substring(suffixIndex)}`)
+      // const files: string[] = await fs.listFile(dir)
+      // console.log(`cached files: ${JSON.stringify(files)}`)
+      return copyFilePath
+    } catch (e) {
+      const message = Errors.getErrorMessage(e)
+      logger.error(TAG, `保存至临时目录失败: from: ${uri} to: ${copyFilePath} ` + message)
+      throw Error(message)
+    } finally {
+      if (file) {
+        fs.close(file)
+      }
+    }
+  }
+
+  static async clearMediaCache(context: Context): Promise<void> {
+    const dir: string = `${context.cacheDir}/${FileProvider.PENDING_TO_SEND_DIR}`
+    let file: fs.File | undefined
+    try {
+      const accessible = await fs.access(dir, fs.AccessModeType.EXIST)
+      if (accessible) {
+        await fs.rmdir(dir)
+      }
+    } catch (e) {
+      const message = Errors.getErrorMessage(e)
+      logger.error(TAG, `删除缓存目录失败 message: ${message} ` + message)
+    } finally {
+      if (file) {
+        fs.close(file)
+      }
+    }
   }
 
   /**
@@ -299,4 +424,24 @@ export class FileProvider {
   static getTransferSpeed(size: number, duration: number): number {
     return Number.parseFloat((size / (duration / 1000)).toFixed(2))
   }
+
+  // public  getImagePath():string {
+  //   String url = "";
+  //   try {
+  //     helper = DataAbilityHelper.creator(getContext());
+  //     ResultSet resultSet = helper.query(AVStorage.Images.Media.EXTERNAL_DATA_ABILITY_URI,
+  //       new String[]{
+  //       AVStorage.Images.Media.ID,
+  //       AVStorage.Images.Media.DISPLAY_NAME, AVStorage.Images.Media.DATA
+  //     }, null);
+  //     while (resultSet.goToNextRow()){
+  //       int columnIndexForName = resultSet.getColumnIndexForName(AVStorage.Images.Media.DATA);
+  //       url = resultSet.getString(columnIndexForName);
+  //     }
+  //   } catch (DataAbilityRemoteException e) {
+  //     e.printStackTrace();
+  //   }
+  //
+  //   return url;
+  // }
 }

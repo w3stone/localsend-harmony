@@ -1,7 +1,7 @@
 import { Screens, SizeConstant } from 'common'
 import { NavigationTitle } from '../../components'
-import { FileInfoModel, PrepareUploadModel } from '../../model'
-import { FileProvider, mime, ObservedArray, Routers } from '../../utils'
+import { FileInfoModel, PrepareUploadModel, ReceivedFileModel } from '../../model'
+import { Dates, FileProvider, mime, ObservedArray, Routers } from '../../utils'
 import { ReceiveItem } from './ReceiveItem'
 import { util } from '@kit.ArkTS'
 import { RandomUtil } from '@pura/harmony-utils'
@@ -14,7 +14,7 @@ export function ReceiveSettingPageBuilder() {
 @Component
 export struct ReceiveSettingPage {
   @Consume('pages') pages: NavPathStack;
-  @State files: ObservedArray<FileInfoModel> = new ObservedArray()
+  @State files: ObservedArray<ReceivedFileModel> = new ObservedArray()
 
   build() {
     NavDestination() {
@@ -46,7 +46,9 @@ export struct ReceiveSettingPage {
         fileName: 'ic_add_filled.svg',
         size: RandomUtil.getRandomInt(10, 100000),
         fileType: mime.getType('ic_add_filled.svg') || '',
-        filePath: FileProvider.getDefaultFileDir(getContext(this))
+        filePath: FileProvider.getDefaultFileDir(getContext(this)),
+        sender: '巨大的蓝莓',
+        sendAt: Dates.now()
       })
     }
   }

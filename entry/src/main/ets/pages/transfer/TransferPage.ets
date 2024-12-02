@@ -154,6 +154,9 @@ export struct TransferPage {
                 }).onClick(() => {
                   if (this.allCompleted) {
                     FileProvider.setTransferComplete()
+                    if (this.param.isSent) {
+                      FileProvider.clearMediaCache(getContext(this))
+                    }
                     this.pages.pop()
                   } else {
                     this.showCancelDialog()
@@ -250,6 +253,9 @@ export struct TransferPage {
         if (action == DialogAction.TWO) {
           EventBus.getInstance().post(EventType.UPLOAD_FILE_CANCELED)
           FileProvider.setTransferComplete()
+          if (this.param.isSent) {
+            FileProvider.clearMediaCache(getContext(this))
+          }
           this.pages.pop()
         }
       }
@@ -263,6 +269,9 @@ export struct TransferPage {
       WebClient.upload(this.param.sessionId, target, this.param.files, this.param.fileToken)
         .then(() => {
           EventBus.getInstance().post(EventType.UPLOAD_FILE_COMPLETED)
+          if (this.param.isSent) {
+            FileProvider.clearMediaCache(getContext(this))
+          }
         })
     }
   }
