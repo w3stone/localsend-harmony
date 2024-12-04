@@ -187,50 +187,6 @@ export class FileProvider {
     return context.filesDir
   }
 
-  // /**
-  //  * 选择文件
-  //  * @param selectMode
-  //  * @returns
-  //  */
-  // static async selectFile(context: Context, selected: PendingSendFile[],
-  //   selectMode: picker.DocumentSelectMode | undefined): Promise<Array<PendingSendFile>> {
-  //   try {
-  //     const options = new picker.DocumentSelectOptions()
-  //     options.maxSelectNumber = 5
-  //     if (canIUse('SystemCapability.FileManagement.UserFileService.FolderSelection')) {
-  //       options.selectMode = selectMode || picker.DocumentSelectMode.FILE
-  //     } else {
-  //       logger.info(TAG, "该设备不支持SystemCapability.FileManagement.UserFileService.FolderSelection");
-  //     }
-  //     const uris = await PickerUtil.selectDocument(options)
-  //     const files: PendingSendFile[] = []
-  //     let stat: fs.Stat
-  //     for (const uri of uris) {
-  //       const path = new fileUri.FileUri(uri).path
-  //       const findIndex = selected.findIndex((file: PendingSendFile, _: number) => file.filePath === path)
-  //       if (findIndex >= 0) {
-  //         continue
-  //       }
-  //       stat = await fs.stat(uri)
-  //       files.push({
-  //         id: util.generateRandomUUID(),
-  //         fileName: FileProvider.getFileName(path),
-  //         size: stat.size,
-  //         fileType: mime.getType(path) || "",
-  //         // metadata: {
-  //         //   modified: (stat.mtime > 0) ? DateUtil.getFormatDate(stat.mtime).toUTCString() : undefined,
-  //         //   accessed: (stat.atime > 0) ? DateUtil.getFormatDate(stat.atime).toUTCString() : undefined
-  //         // },
-  //         // filePath: path
-  //         filePath: uri
-  //       })
-  //     }
-  //     return files
-  //   } catch (e) {
-  //     logger.info(TAG, `select file error: ${e.message}\n${e.stack}`)
-  //   }
-  //   return []
-  // }
   /**
    * 选择文件
    * @param selectMode
@@ -300,7 +256,6 @@ export class FileProvider {
           //   modified: (stat.mtime > 0) ? DateUtil.getFormatDate(stat.mtime).toUTCString() : undefined,
           //   accessed: (stat.atime > 0) ? DateUtil.getFormatDate(stat.atime).toUTCString() : undefined
           // },
-          // filePath: path
           filePath: newFilePath
         })
       }
@@ -424,24 +379,4 @@ export class FileProvider {
   static getTransferSpeed(size: number, duration: number): number {
     return Number.parseFloat((size / (duration / 1000)).toFixed(2))
   }
-
-  // public  getImagePath():string {
-  //   String url = "";
-  //   try {
-  //     helper = DataAbilityHelper.creator(getContext());
-  //     ResultSet resultSet = helper.query(AVStorage.Images.Media.EXTERNAL_DATA_ABILITY_URI,
-  //       new String[]{
-  //       AVStorage.Images.Media.ID,
-  //       AVStorage.Images.Media.DISPLAY_NAME, AVStorage.Images.Media.DATA
-  //     }, null);
-  //     while (resultSet.goToNextRow()){
-  //       int columnIndexForName = resultSet.getColumnIndexForName(AVStorage.Images.Media.DATA);
-  //       url = resultSet.getString(columnIndexForName);
-  //     }
-  //   } catch (DataAbilityRemoteException e) {
-  //     e.printStackTrace();
-  //   }
-  //
-  //   return url;
-  // }
 }

@@ -3,9 +3,10 @@ import { Objects, Strings } from 'common';
 import { DeviceModel } from '../model/DeviceModel';
 import { util } from '@kit.ArkTS';
 import { Keys } from '../constant';
-import { MulticastModel } from '../model';
+import { MulticastModel, NearbyDeviceModel } from '../model';
 import wifiManager from '@ohos.wifiManager';
 import { RandomUtil } from '@pura/harmony-utils';
+import { DeviceMapper } from '../db/mapper/DeviceMapper';
 
 export class DeviceProvider {
   static REGISTERED_DEVICE_LIST_KEY = "REGISTERED_DEVICE_LIST_KEY"
@@ -25,26 +26,24 @@ export class DeviceProvider {
     return Strings.formatString(alias, adjective, fruit)
   }
 
-  static addOrReplaceDevice(hostname: string, device: DeviceModel) {
-    const allDevice: DeviceModel[] = AppStorage.get(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) || []
-    const key = `device_${hostname}`
-    let findIndex = -1
-    findIndex = allDevice.findIndex((item: DeviceModel) => item.key === key)
-    device.key = key
-    device.hostname = hostname
+  static async addOrReplaceDevice(device: DeviceModel) {
+    const allDevice: NearbyDeviceModel[] = DeviceProvider.getAllDevice()
+    const nearby: NearbyDeviceModel = NearbyDeviceModel.create(device)
+    await new DeviceMapper().insertOrUpdate(nearby)
+    let findIndex = allDevice.findIndex((item: NearbyDeviceModel) => item.key === nearby.key)
     if (findIndex > -1) {
       allDevice[findIndex] = Objects.clone(allDevice[findIndex], device)
     } else {
-      allDevice.push(device)
+      allDevice.push(nearby)
     }
     AppStorage.setOrCreate(DeviceProvider.REGISTERED_DEVICE_LIST_KEY, allDevice)
   }
 
   static getDevice(hostname: string): DeviceModel | undefined {
     const key = `device_${hostname}`
-    const allDevice: DeviceModel[] | undefined = AppStorage.get(DeviceProvider.REGISTERED_DEVICE_LIST_KEY)
+    const allDevice: NearbyDeviceModel[] | undefined = AppStorage.get(DeviceProvider.REGISTERED_DEVICE_LIST_KEY)
     if (allDevice) {
-      const findIndex = allDevice.findIndex((value: DeviceModel) => value.key === key)
+      const findIndex = allDevice.findIndex((value: NearbyDeviceModel) => value.key === key)
       if (findIndex > -1) {
         return allDevice[findIndex]
       }
@@ -52,7 +51,7 @@ export class DeviceProvider {
     return undefined
   }
 
-  static getAllDevice(): Array<DeviceModel> {
+  static getAllDevice(): Array<NearbyDeviceModel> {
     return AppStorage.get(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) || []
   }
 

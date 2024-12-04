@@ -60,13 +60,14 @@ export class WebService {
         let device: DeviceModel = JSON.parse(message) as DeviceModel
         if (device && device.fingerprint != DeviceProvider.getDeviceFingerprint() && device.announce == true) {
           device.hostname = info.remoteInfo.address
-          DeviceProvider.addOrReplaceDevice(info.remoteInfo.address, device)
+          DeviceProvider.addOrReplaceDevice(device)
           logger.info(TAG, '<<<---UDP received message: ' + JSON.stringify(device));
           WebClient.register(device)
         }
       })
       const isRunning = await server.bind({ address: '0.0.0.0', port: this.port })
         .get('/', this.index)
+        .get('/api/localsend/v1/info', this.info)
         .post('/api/localsend/v2/register', this.register)
         .post('/api/localsend/v2/prepare-upload', this.prepareUpload)
         .post('/api/localsend/v2/upload', async (exchange: HttpExchange) => {
@@ -121,14 +122,21 @@ export class WebService {
     exchange.end('HelloWorld')
   }
 
+  private info(exchange: HttpExchange) {
+    if (exchange.isEnd) {
+      logger.info(TAG, "<<<--- info")
+      exchange.writeJson(new MulticastModel(false))
+    }
+  }
+
   private register(exchange: HttpExchange) {
     logger.info(TAG, "<<<--- register isEnd: " + exchange.isEnd)
     if (exchange.isEnd) {
       const device: DeviceModel = exchange.getRequestJsonBody() as DeviceModel
       device.hostname = exchange.getRemoteAddress()?.address || ''
       logger.info(TAG, "<<<--- register: " + JSON.stringify(device))
-      DeviceProvider.addOrReplaceDevice(device.hostname!!, device)
-      exchange.writeJson(new MulticastModel(false))
+      DeviceProvider.addOrReplaceDevice(device)
+      exchange.writeJson(new MulticastModel())
     }
   }
 

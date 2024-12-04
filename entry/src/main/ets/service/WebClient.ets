@@ -36,11 +36,11 @@ export class WebClient {
     }
     const device: DeviceModel = DeviceProvider.getCurrentDevice()
     const url = WebClient.getCombinedURL(target.hostname, target.port, ApiConstant.REGISTER)
-    const hostname = target.hostname
     HttpRequest.post(url, device)
       .then(resolve => {
         logger.info(TAG, '--->>> 当前设备信息已发送 response: ' + JSON.stringify(resolve))
-        DeviceProvider.addOrReplaceDevice(hostname, resolve as DeviceModel)
+        const device = resolve as DeviceModel
+        DeviceProvider.addOrReplaceDevice(device)
       }, (reason: Error) => {
         logger.info(TAG, '--->>> 发送当前设备信息失败: ' + JSON.stringify(reason) + " url: " + url)
       })

@@ -9,4 +9,11 @@ export class Errors {
     }
     return ''
   }
+
+  static getError(e: object): Error {
+    if (e instanceof Error) {
+      return e
+    }
+    return Error(e?.toString())
+  }
 }

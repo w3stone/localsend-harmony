@@ -5,10 +5,9 @@ import { DeviceProvider } from '../../../../utils/DeviceProvider';
 import { EventBus, EventType } from '../../../../eventbus';
 import { SelectorButton } from './SelectorButton';
 import { DeviceItem } from '../../../../components/DeviceItem';
-import { picker } from '@kit.CoreFileKit';
 import { SelectedFiles } from './SelctedFiles';
 import { FileProvider, ObservedArray, Routers } from '../../../../utils';
-import { FileInfoModel } from '../../../../model';
+import { FileInfoModel, NearbyDeviceModel } from '../../../../model';
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { Footer } from './Footer';
@@ -21,7 +20,7 @@ import { SnapShotImage } from '../../../../transaction/SnapShotImage';
 @Component
 export struct Send {
   @Consume('pages') pages: NavPathStack
-  @StorageLink(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) allDevice: DeviceModel[] = []
+  @StorageLink(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) allDevice: NearbyDeviceModel[] = []
   @State selectedFiles: ObservedArray<FileInfoModel> = []
   // @State toDevice: DeviceModel | null = null
   // mSendFileRequestDialog: CustomDialogController | null = new CustomDialogController({
@@ -127,7 +126,7 @@ export struct Send {
         //设备列表
         if (this.allDevice.length > 0) {
           List({ space: SizeConstant.SPACE_L }) {
-            ForEach(this.allDevice, (item: DeviceModel, index: number) => {
+            ForEach(this.allDevice, (item: NearbyDeviceModel, index: number) => {
               ListItem() {
                 DeviceItem({ device: item })
                   .id(CardUtil.getPostPageImageId(index.toString()))
@@ -135,7 +134,7 @@ export struct Send {
                     this.onSendToDeviceClick(item, index)
                   })
               }
-            }, (item: DeviceModel, index: number) => `${item.key}_${index}`)
+            }, (item: NearbyDeviceModel, index: number) => `${item.key}_${index}`)
             ListItem() {
               Footer()
             }
@@ -148,6 +147,7 @@ export struct Send {
           .width('100%')
           .layoutWeight(1)
         } else {
+          Blank().height(SizeConstant.SPACE_L)
           DeviceItem()
           Footer()
         }
@@ -231,7 +231,7 @@ export struct Send {
     )
   }
 
-  onSendToDeviceClick(item: DeviceModel, index: number) {
+  onSendToDeviceClick(item: NearbyDeviceModel, index: number) {
     if (!this.selectedFiles || this.selectedFiles.length == 0) {
       DialogHelper.showAlertDialog({
         title: $r('app.string.unselected_file'),

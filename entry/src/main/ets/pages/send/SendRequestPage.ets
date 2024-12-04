@@ -1,4 +1,4 @@
-import { DeviceModel, FileInfoModel, PrepareTransferModel, TransferPageParam } from '../../model'
+import { DeviceModel, FileInfoModel, NearbyDeviceModel, PrepareTransferModel, TransferPageParam } from '../../model'
 import { DeviceProvider, Routers } from '../../utils'
 import { Errors, logger, Screens, SizeConstant } from 'common'
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog'
@@ -18,7 +18,7 @@ export function SendRequestPageBuilder() {
 export struct SendRequestPage {
   @Consume('pages') pages: NavPathStack
   @State files: FileInfoModel[] = []
-  @State target: DeviceModel | null = null
+  @State target: NearbyDeviceModel | null = null
   @State current: DeviceModel = DeviceProvider.getCurrentDevice()
   @State message: ResourceStr = $r('app.string.waiting_response')
   @State isComplete: boolean = false

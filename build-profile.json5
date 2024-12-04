@@ -24,6 +24,7 @@
         "buildOption": {
           "strictMode": {
             "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
           }
         }
       }
@@ -51,8 +52,8 @@
       ]
     },
     {
-      "name": "lib_common",
-      "srcPath": "./lib_common",
+      "name": "common",
+      "srcPath": "./common"
     },
     {
       "name": "serve",

@@ -1,11 +1,11 @@
 import { SizeConstant } from "common"
 import { DeviceIcon, Icon, LoopImage } from "./"
-import { DeviceModel } from "../model"
+import { DeviceModel, NearbyDeviceModel } from "../model"
 import { curves } from "@kit.ArkUI"
 
 @Component
 export struct DeviceItem {
-  @State device: DeviceModel | undefined | null = undefined
+  @State device: NearbyDeviceModel | DeviceModel | undefined | null = undefined
   @Prop favorDisplay: boolean = true
   @State scaleValue: number = 1
 
@@ -28,7 +28,7 @@ export struct DeviceItem {
           .fontColor($r('app.color.on_container'))
         Blank().height(SizeConstant.TEXT_M)
         Row() {
-          Text(this.device == undefined ? "" : "#1")
+          Text(this.getDeviceId(this.device) ? `#${this.getDeviceId(this.device)}` : "")
             .fontSize(SizeConstant.TEXT_XL)
             .fontColor($r('app.color.on_container'))
             .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
@@ -58,7 +58,7 @@ export struct DeviceItem {
       }
     }
     .width('100%')
-    .height(105)
+    .height(90)
     // .margin({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
     .padding(SizeConstant.SPACE_L)
     .scale({
@@ -78,5 +78,12 @@ export struct DeviceItem {
         })
       }
     })
+  }
+
+  private getDeviceId(device: DeviceModel): number | undefined {
+    if (device instanceof NearbyDeviceModel) {
+      return device.id
+    }
+    return undefined
   }
 }

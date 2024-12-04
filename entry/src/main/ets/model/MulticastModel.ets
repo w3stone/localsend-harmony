@@ -15,6 +15,5 @@ export class MulticastModel extends DeviceModel {
     super.deviceType = AppStorage.get(Keys.DEVICE_TYPE) || 'mobile' // mobile | desktop | web | headless | server, nullable
     super.protocol = "http" // http | https
     super.download = false // if download API (section 5.2, 5.3) is active (optional, default: false)
-    super.announce = announce
   }
 }

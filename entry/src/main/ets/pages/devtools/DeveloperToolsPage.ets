@@ -1,13 +1,17 @@
 import { RandomUtil } from '@pura/harmony-utils';
-import { fileIo as fs, picker, fileUri } from '@kit.CoreFileKit';
-import { Errors, logger, SizeConstant, toast } from 'common';
+import { fileUri, fileIo as fs, picker } from '@kit.CoreFileKit';
+import { Errors, SizeConstant, toast } from 'common';
 import { Icon, NavigationTitle } from '../../components';
 import { buffer, JSON } from '@kit.ArkTS';
-import { FileProvider, mime, ObservedArray } from '../../utils';
+import { DeviceProvider, FileProvider, mime, ObservedArray } from '../../utils';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { DeviceMapper } from '../../db/mapper';
+import { Connection, Wapper } from 'rdbplus';
+import { CardColumn } from './CardColumn';
+import { DeviceModel, NearbyDeviceModel } from '../../model';
 
 @Builder
 export function DeveloperToolsPageBuilder() {
@@ -33,7 +37,7 @@ export struct DeveloperToolsPage {
       NavigationTitle({ title: '开发者工具' }) {
         Scroll() {
           Column() {
-            Column() {
+            CardColumn() {
               Progress({ value: this.progress, total: this.total, type: ProgressType.Linear })
                 .style({ strokeWidth: 10, enableSmoothEffect: true })
                 .color($r('app.color.primary'))
@@ -60,13 +64,8 @@ export struct DeveloperToolsPage {
                   })
               }
             }
-            .padding(SizeConstant.SPACE_M)
-            .borderRadius(SizeConstant.RADIUS_M)
-            .backgroundColor($r('app.color.container'))
 
-            Blank().height(SizeConstant.SPACE_L)
-
-            Column() {
+            CardColumn() {
               List({ space: 10 }) {
                 ForEach(this.fileNames, (fileName: string) => {
                   ListItem() {
@@ -109,10 +108,22 @@ export struct DeveloperToolsPage {
                   this.clearCacheFiles()
                 })
               }
+
             }
-            .padding(SizeConstant.SPACE_M)
-            .borderRadius(SizeConstant.RADIUS_M)
-            .backgroundColor($r('app.color.container'))
+
+            CardColumn() {
+              Button('删除表').onClick(() => {
+                this.onDropDeviceTableClick()
+              })
+              Blank().height(SizeConstant.SPACE_M)
+              Button('添加到收藏夹').onClick(() => {
+                this.onAddCollectedClick()
+              })
+              Blank().height(SizeConstant.SPACE_M)
+              Button('获取收藏夹列表').onClick(() => {
+                this.onCollectedClick()
+              })
+            }
           }
           .justifyContent(FlexAlign.Start)
           .padding(SizeConstant.SPACE_L)
@@ -161,6 +172,28 @@ export struct DeveloperToolsPage {
       .catch((err: object) => {
         console.error(`clearCacheFiles error: ${Errors.getErrorMessage(err)}`)
       })
+  }
+
+  async onDropDeviceTableClick() {
+    const mapper: DeviceMapper = new DeviceMapper()
+    const conn: Connection = await mapper.getConnection()
+    await conn.execDML('DROP TABLE t_device;')
+    console.info('表已删除')
+  }
+
+  async onAddCollectedClick() {
+    const mapper: DeviceMapper = new DeviceMapper()
+    const devices: NearbyDeviceModel[] = DeviceProvider.getAllDevice()
+    if (devices.length == 0) {
+      console.warn('附近没有设备')
+      return
+    }
+    await mapper.insertOrUpdate(devices[0])
+  }
+
+  async onCollectedClick() {
+    const mapper: DeviceMapper = new DeviceMapper()
+    await mapper.getList(new Wapper())
   }
 
   async onSaveImageToAlbumClick(result: SaveButtonOnClickResult, fileName: string) {
