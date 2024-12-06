@@ -1,8 +1,8 @@
-import { logger, SizeConstant } from 'common';
+import { SizeConstant } from 'common';
 import { FileIcon, Icon, IconButton } from '../../../../components';
 import { FileInfoModel } from '../../../../model';
 import { FileProvider, ObservedArray, Routers } from '../../../../utils';
-import { picker } from '@kit.CoreFileKit';
+import { ClickUtil } from '@pura/harmony-utils';
 
 @Component
 export struct SelectedFiles {
@@ -50,11 +50,11 @@ export struct SelectedFiles {
       Row() {
         Button($r('app.string.edit'), { stateEffect: false, buttonStyle: ButtonStyleMode.TEXTUAL })
           .fontColor($r('app.color.on_background'))
-          .onClick(() => {
+          .onClick(() => ClickUtil.throttle(() => {
             this.pages.pushPathByName(Routers.EDITOR_PAGE, this.files, (info: PopInfo) => {
               this.files = info.result as ObservedArray<FileInfoModel>
             })
-          })
+          }))
 
         IconButton({
           icon: $r('app.media.ic_add_filled'),
@@ -70,7 +70,7 @@ export struct SelectedFiles {
             right: SizeConstant.SPACE_XL,
             bottom: SizeConstant.SPACE_EXTRA_S
           })
-          .onClick(this.onAppendClick)
+          .onClick(() => ClickUtil.throttle(() => this.onAppendClick))
       }
       .width('100%')
       .justifyContent(FlexAlign.End)

@@ -53,6 +53,10 @@
       "value": "删除全部"
     },
     {
+      "name": "no_data",
+      "value": "无数据"
+    },
+    {
       "name": "clipboard_permission_tips",
       "value": "由于系统限制，为了保护你的隐私安全，请点击下方\"粘贴\"按钮，以授权APP临时读取剪切板内容"
     },
@@ -363,6 +367,26 @@
     {
       "name": "history",
       "value": "历史"
+    },
+    {
+      "name": "open_folder",
+      "value": "打开目录"
+    },
+    {
+      "name": "delete_record",
+      "value": "删除历史"
+    },
+    {
+      "name": "clear_record_tips",
+      "value": "清空历史记录"
+    },
+    {
+      "name": "clear_record_tips_text",
+      "value": "要清空全部历史记录吗？"
+    },
+    {
+      "name": "delete",
+      "value": "删除"
     },
     {
       "name": "open_file",

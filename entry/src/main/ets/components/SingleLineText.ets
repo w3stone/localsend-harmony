@@ -7,6 +7,7 @@ export struct SingleLineText {
   @Prop textSize: Length = SizeConstant.TEXT_XL
   @Prop textColor: ResourceColor = $r('app.color.on_container')
   @Prop overflow: TextOverflow = TextOverflow.Ellipsis
+  @Prop ellipsisMode: EllipsisMode = EllipsisMode.CENTER
   @Prop textLineHeight: number | string | Resource
   @Prop modifier: TextModifier
 
@@ -19,8 +20,9 @@ export struct SingleLineText {
         overflow: this.overflow
       })
       .attributeModifier(this.modifier)
-      .ellipsisMode(EllipsisMode.CENTER)
+      .ellipsisMode(this.ellipsisMode)
       .wordBreak(WordBreak.BREAK_ALL)// 设置断行规则WordBreak.BREAK_ALL后实现字母为单位进行截断
       .textAlign(TextAlign.Start)
+      .constraintSize({ maxWidth: '100%' })
   }
 }

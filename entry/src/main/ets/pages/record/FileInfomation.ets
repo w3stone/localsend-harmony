@@ -1,7 +1,7 @@
 import { DateUtil } from '@pura/harmony-utils'
 import { logger, SizeConstant } from 'common'
 import { SingleLineText } from '../../components'
-import { ReceivedFileModel } from '../../model'
+import { ReceiveRecordModel } from '../../model'
 import { FileProvider } from '../../utils'
 import { TextModifier } from '@kit.ArkUI'
 
@@ -9,7 +9,7 @@ const lineHeight = 22
 
 @Component
 export struct FileInfomation {
-  @Prop data: ReceivedFileModel
+  @Prop data: ReceiveRecordModel
 
   build() {
     RelativeContainer() {
@@ -28,6 +28,7 @@ export struct FileInfomation {
         .margin({ left: SizeConstant.SPACE_EXTRA_S })
         .alignRules({
           left: { anchor: "file_name_text", align: HorizontalAlign.End },
+          right: { anchor: "__container__", align: HorizontalAlign.End }
         })
         .id('file_name_value')
 
@@ -45,12 +46,14 @@ export struct FileInfomation {
         text: this.data.filePath,
         textSize: SizeConstant.TEXT_L,
         textColor: $r('app.color.on_background'),
+        ellipsisMode: EllipsisMode.END,
         modifier: new TextModifier().lineHeight(lineHeight)
       })
         .id('file_path_value')
         .alignRules({
           top: { anchor: "file_name_value", align: VerticalAlign.Bottom },
           left: { anchor: "file_name_value", align: HorizontalAlign.Start },
+          right: { anchor: "__container__", align: HorizontalAlign.End }
         })
         .margin({ left: SizeConstant.SPACE_EXTRA_S })
 
@@ -93,6 +96,7 @@ export struct FileInfomation {
         .alignRules({
           top: { anchor: "file_size_value", align: VerticalAlign.Bottom },
           left: { anchor: "file_name_value", align: HorizontalAlign.Start },
+          right: { anchor: "__container__", align: HorizontalAlign.End }
         })
         .margin({ left: SizeConstant.SPACE_EXTRA_S })
 
@@ -116,7 +120,7 @@ export struct FileInfomation {
         })
         .lineHeight(lineHeight)
     }
-    .width('auto')
+    .width('100%')
     .height('auto')
   }
 

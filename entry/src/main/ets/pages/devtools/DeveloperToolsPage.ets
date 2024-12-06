@@ -9,9 +9,10 @@ import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { DeviceMapper } from '../../db/mapper';
-import { Connection, Wapper } from 'rdbplus';
+import { Connection, Page, Wapper } from 'rdbplus';
 import { CardColumn } from './CardColumn';
-import { DeviceModel, NearbyDeviceModel } from '../../model';
+import { NearbyDeviceModel, ReceiveRecordModel } from '../../model';
+import { ReceivedRecordMapper } from '../../db/mapper/ReceiveRecordMapper';
 
 @Builder
 export function DeveloperToolsPageBuilder() {
@@ -123,6 +124,30 @@ export struct DeveloperToolsPage {
               Button('获取收藏夹列表').onClick(() => {
                 this.onCollectedClick()
               })
+              Blank().height(SizeConstant.SPACE_M)
+              // Button('Can i use').onClick(() => {
+              //   if (!canIUse('SystemCapability.FileManagement.AppFileService.FolderAuthorization')) {
+              //     console.error('this api is not supported on this device');
+              //     return;
+              //   } else {
+              //     console.info('this api is supported on this device');
+              //   }
+              // })
+            }
+
+            CardColumn({ title: '接收记录' }) {
+              Button('插入一条接收记录').onClick(() => {
+                this.onInsertReceiveRecordClick()
+              })
+              Blank().height(SizeConstant.SPACE_M)
+              Button('读取接收记录').onClick(() => {
+                this.onSelectReceiveRecordClick()
+              })
+              Blank().height(SizeConstant.SPACE_M)
+              Button('清空接收记录').onClick(() => {
+                this.onClearReceiveRecordClick()
+              })
+              Blank().height(SizeConstant.SPACE_M)
             }
           }
           .justifyContent(FlexAlign.Start)
@@ -142,6 +167,9 @@ export struct DeveloperToolsPage {
       .then((files: string[]) => {
         this.fileNames = files
         console.log(`files: ${JSON.stringify(files)}`)
+      })
+      .catch((reason: object) => {
+        console.log(`getFiles error: ${Errors.getErrorMessage(reason)}`)
       })
   }
 
@@ -313,6 +341,44 @@ export struct DeveloperToolsPage {
       }).catch((err: BusinessError) => {
         console.error(`copy directory failed with error message: ${err.message} , error code: ${err.code}`);
       });
+    }
+  }
+
+  async onInsertReceiveRecordClick() {
+    try {
+      const mapper = new ReceivedRecordMapper()
+      const record = new ReceiveRecordModel()
+      record.fileName = `${RandomUtil.getRandomStr(10, 'abcdadsasdofiefhefiewfhweiokjksdkjfhsbzxcz')}.txt`
+      record.size = RandomUtil.getRandomInt(6200, 12120)
+      record.fileType = 'application/html'
+      record.sender = '炽热的西兰花'
+      record.sendAt = 1733394035000
+      record.filePath = 'file://docs/storage/Users/username'
+      await mapper.insert(record)
+      console.info(`接收记录保存成功: ${JSON.stringify(record)}`)
+    } catch (e) {
+      console.error(`插入接收记录失败: ${JSON.stringify(Errors.getErrorMessage(e))}`)
+    }
+  }
+
+  async onSelectReceiveRecordClick() {
+    try {
+      const mapper = new ReceivedRecordMapper()
+      const page: Page<ReceiveRecordModel> = await mapper.getPage(1, 30, new Wapper())
+      // const records: ReceiveRecordModel[] = await mapper.getList(new Wapper())
+      console.info(`page: ${JSON.stringify(page)}`)
+    } catch (e) {
+      console.error(`获取接收记录失败: ${JSON.stringify(Errors.getErrorMessage(e))}`)
+    }
+  }
+
+  async onClearReceiveRecordClick() {
+    try {
+      const mapper = new ReceivedRecordMapper()
+      mapper.delete(new Wapper())
+      console.info(`the received record has been deleted..`)
+    } catch (e) {
+      console.error(`获取接收记录失败: ${JSON.stringify(Errors.getErrorMessage(e))}`)
     }
   }
 }

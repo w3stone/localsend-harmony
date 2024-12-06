@@ -1,20 +1,22 @@
 import { DateUtil } from '@pura/harmony-utils'
 import { SizeConstant } from 'common/src/main/ets/constant/SizeConstant'
 import { FileIcon, Icon, SingleLineText } from '../../components'
-import { Keys } from '../../constant'
-import { ReceivedFileModel } from '../../model'
+import { ReceiveRecordModel } from '../../model'
 import { FileProvider } from '../../utils'
 import { FileMenu } from './FileMenu'
 
 @Component
-export struct HistoryItem {
-  @Prop data: ReceivedFileModel
+export struct RecordItem {
+  @Prop data: ReceiveRecordModel
   @Prop index: number
   @State isLongPress: boolean = false
+  onRemoveRecordClick?: (id: number) => void
 
   @Builder
   BindMenus() {
-    FileMenu({ data: this.data })
+    FileMenu({
+      data: this.data, onRemoveRecordClick: this.onRemoveRecordClick
+    })
   }
 
   build() {
@@ -47,6 +49,6 @@ export struct HistoryItem {
   }
 
   getFileInfo(): string {
-    return `${DateUtil.getFormatDateStr(new Date())} - ${FileProvider.formatBytes(this.data.size)} - ${AppStorage.get(Keys.ALIAS)}`
+    return `${DateUtil.getFormatDateStr(this.data.sendAt)} - ${FileProvider.formatBytes(this.data.size)} - ${this.data.sender}`
   }
 }

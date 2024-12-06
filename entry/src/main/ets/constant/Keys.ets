@@ -19,7 +19,7 @@ export class Keys {
    */
   static USE_PIN_WHEN_RECEIVE = 'USE_PIN_WHEN_RECEIVE'
   /**
-   * 保存到历史记录
+   * 保存到历史记录 bool
    */
   static SAVE_RECEIVE_RECORD = 'SAVE_RECEIVE_RECORD'
   /**

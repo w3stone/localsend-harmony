@@ -13,6 +13,7 @@ export struct IconButton {
   @Prop verticalPadding: number = 0
   @Prop textColor: ResourceColor = $r('app.color.on_background')
   @Prop iconColor: ResourceColor = $r('app.color.icon')
+  @Prop clickable: boolean = true
 
   build() {
     Stack() {
@@ -30,7 +31,7 @@ export struct IconButton {
           .fillColor(this.iconColor)
         Text(this.text)
           .fontSize(this.textSize)
-          .fontColor(this.textColor)
+          .fontColor(this.clickable ? this.textColor : $r('app.color.on_container_secondary'))
       }
       .align(Alignment.Center)
     }

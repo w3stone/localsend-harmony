@@ -13,11 +13,15 @@ export struct CardColumn {
   build() {
     Column() {
       if (this.title) {
-        Text()
-          .fontColor($r('app.color.on_container'))
-          .fontSize(SizeConstant.TEXT_XL)
+        Row() {
+          Text(this.title)
+            .fontColor($r('app.color.on_container'))
+            .fontSize(SizeConstant.TEXT_XL)
+        }
+        .width('100%')
+        .justifyContent(FlexAlign.Start)
+        Blank().height(SizeConstant.SPACE_M)
       }
-      Blank().height(SizeConstant.SPACE_M)
       this.content()
     }
     .width('100%')

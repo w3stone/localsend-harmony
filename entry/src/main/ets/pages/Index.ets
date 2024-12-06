@@ -1,7 +1,7 @@
 import { MainPage } from './main';
 import { TransferPage } from './transfer/TransferPage';
 import { Routers } from '../utils';
-import { HistoryPage } from './history/HistoryPage';
+import { ReceiveRecordPage } from './record/ReceiveRecordPage';
 import { Keys } from '../constant';
 import { ConfigurationConstant } from '@kit.AbilityKit';
 import { EditorPage } from './editor';
@@ -32,7 +32,7 @@ struct Index {
     } else if (name == Routers.RECEIVE_SETTING_PAGE) {
       ReceiveSettingPage()
     } else if (name == Routers.HISTORY_PAGE) {
-      HistoryPage()
+      ReceiveRecordPage()
     } else if (name == Routers.EDITOR_PAGE) {
       EditorPage()
     } else if (name == Routers.QUESTION_PAGE) {

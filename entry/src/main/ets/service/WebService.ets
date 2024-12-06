@@ -20,7 +20,7 @@ import { FileReceptionService } from './FileReceptionService';
 import { createHttpServer, HttpServer } from 'serve/src/main/ets/http/HttpServer';
 import { HttpExchange } from 'serve/src/main/ets/http/HttpExchange';
 import { HttpError } from 'serve';
-import { FlushService } from './download/FlushService';
+import { FlushService } from './flush/FlushService';
 
 const TAG: string = "WebService"
 

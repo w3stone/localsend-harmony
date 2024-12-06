@@ -1,6 +1,5 @@
 import { logger, SizeConstant, Strings, toast } from 'common';
 import { Icon, NavigationTitle, PasteboardAuthorizeDialog, PasteboardAuthorizeDialogOptions } from '../../../../components';
-import { DeviceModel } from '../../../../model/DeviceModel';
 import { DeviceProvider } from '../../../../utils/DeviceProvider';
 import { EventBus, EventType } from '../../../../eventbus';
 import { SelectorButton } from './SelectorButton';
@@ -16,6 +15,7 @@ import { CardUtil } from '../../../../transaction/CardUtil';
 import { componentSnapshot } from '@kit.ArkUI';
 import { image } from '@kit.ImageKit';
 import { SnapShotImage } from '../../../../transaction/SnapShotImage';
+import { ClickUtil } from '@pura/harmony-utils';
 
 @Component
 export struct Send {
@@ -54,9 +54,9 @@ export struct Send {
           Row() {
             SelectorButton({ text: $r('app.string.file'), icon: $r('app.media.ic_file') })
               .layoutWeight(1)
-              .onClick(() => {
+              .onClick(() => ClickUtil.throttle(() => {
                 this.addSelectFile(getContext(this))
-              })
+              }))
             Blank().width(SizeConstant.SPACE_M)
             // if (canIUse('SystemCapability.FileManagement.UserFileService.FolderSelection')) {
             //   SelectorButton({ text: $r('app.string.folder'), icon: $r('app.media.ic_folder_filled') })
@@ -68,21 +68,21 @@ export struct Send {
             // }
             SelectorButton({ text: $r('app.string.media'), icon: $r('app.media.ic_file') })
               .layoutWeight(1)
-              .onClick(() => {
+              .onClick(() => ClickUtil.throttle(() => {
                 this.addMediaClick(getContext(this))
-              })
+              }))
             Blank().width(SizeConstant.SPACE_M)
             SelectorButton({ text: $r('app.string.text'), icon: $r('app.media.ic_text_filled') })
               .layoutWeight(1)
-              .onClick(() => {
+              .onClick(() => ClickUtil.throttle(() => {
                 this.onSendTextMessageClick()
-              })
+              }))
             Blank().width(SizeConstant.SPACE_M)
             SelectorButton({ text: $r('app.string.clipboard'), icon: $r('app.media.ic_clipboard') })
               .layoutWeight(1)
-              .onClick(() => {
+              .onClick(() => ClickUtil.throttle(() => {
                 this.onSendFromPasteboard()
-              })
+              }))
           }
           .width('100%')
           .height('auto')
@@ -97,29 +97,29 @@ export struct Send {
           Icon({
             src: $r('app.media.ic_rotate'),
             spacing: SizeConstant.SPACE_EXTRA_S,
-          }).onClick(() => {
+          }).onClick(() => ClickUtil.throttle(() => {
             this.allDevice = []
             EventBus.getInstance().post(EventType.SCAN_DEVICE)
-          })
+          }))
           Blank().width(SizeConstant.SPACE_L)
           Icon({
             src: $r('app.media.ic_quickstart'),
             spacing: SizeConstant.SPACE_EXTRA_S,
-          }).onClick(() => {
+          }).onClick(() => ClickUtil.throttle(() => {
             toast.show("手动发送")
-          })
+          }))
           Blank().width(SizeConstant.SPACE_L)
           Icon({
             src: $r('app.media.ic_favor'), spacing: SizeConstant.SPACE_EXTRA_S,
-          }).onClick(() => {
+          }).onClick(() => ClickUtil.throttle(() => {
             toast.show("收藏夹")
-          })
+          }))
           Blank().width(SizeConstant.SPACE_L)
           Icon({
             src: $r('app.media.ic_settings'), spacing: SizeConstant.SPACE_EXTRA_S,
-          }).onClick(() => {
+          }).onClick(() => ClickUtil.throttle(() => {
             toast.show("发送模式")
-          })
+          }))
         }
         .margin({ top: SizeConstant.SPACE_XL })
 

@@ -14,8 +14,8 @@
       "buildFunction": "ReceiveSettingPageBuilder"
     },{
       "name": "HistoryPage",
-      "pageSourceFile": "src/main/ets/pages/history/HistoryPage.ets",
-      "buildFunction": "HistoryPageBuilder"
+      "pageSourceFile": "src/main/ets/pages/record/ReceiveRecordPage.ets",
+      "buildFunction": "ReceiveRecordPageBuilder"
     },{
       "name": "EditorPage",
       "pageSourceFile": "src/main/ets/pages/editor/EditorPage.ets",

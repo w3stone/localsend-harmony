@@ -1,7 +1,9 @@
-import { SizeConstant } from "common"
-import { DeviceIcon, Icon, LoopImage } from "./"
-import { DeviceModel, NearbyDeviceModel } from "../model"
-import { curves } from "@kit.ArkUI"
+import { SizeConstant } from 'common'
+import { DeviceIcon, Icon, LoopImage } from './'
+import { DeviceModel, NearbyDeviceModel } from '../model'
+import { curves } from '@kit.ArkUI'
+import { DeviceMapper } from '../db/mapper/DeviceMapper'
+import { ClickUtil } from '@pura/harmony-utils'
 
 @Component
 export struct DeviceItem {
@@ -53,8 +55,10 @@ export struct DeviceItem {
       .alignItems(HorizontalAlign.Start)
 
       if (this.favorDisplay) {
-        Icon({ src: $r('app.media.ic_favor') }).align(Alignment.Center)
+        Icon({ src: this.isFavorited() ? $r('app.media.ic_favor_filled') : $r('app.media.ic_favor') })
+          .align(Alignment.Center)
           .visibility(this.device == undefined ? Visibility.None : Visibility.Visible)
+          .onClick(() => ClickUtil.throttle(() => this.onFavoritedClick(), 100))
       }
     }
     .width('100%')
@@ -78,6 +82,20 @@ export struct DeviceItem {
         })
       }
     })
+  }
+
+  private isFavorited(): boolean {
+    if (this.device instanceof NearbyDeviceModel) {
+      return this.device.isFavorited === 1
+    }
+    return false
+  }
+
+  private onFavoritedClick() {
+    if (this.device instanceof NearbyDeviceModel) {
+      this.device.isFavorited = this.device.isFavorited ^ 1
+      new DeviceMapper().updateById(this.device)
+    }
   }
 
   private getDeviceId(device: DeviceModel): number | undefined {

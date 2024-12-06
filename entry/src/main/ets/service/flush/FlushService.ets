@@ -1,16 +1,21 @@
 import { fileIo as fs } from '@kit.CoreFileKit';
 import { Errors, logger } from 'common';
 import { HttpError, HttpExchange } from 'serve';
-import { ErrorMessage, FileInfoModel, FileTransferStatus, TransferProgressChangedAction } from '../../model';
+import { ErrorMessage, FileInfoModel, FileTransferStatus, TransferProgressChangedAction, ReceiveRecordModel } from '../../model';
 import { EventBus, EventType, TransferFileProgressEvent } from '../../eventbus';
 import { ArkTSUtils } from '@kit.ArkTS';
-import { Dates, FileProvider } from '../../utils';
+import { Dates, DeviceProvider, FileProvider } from '../../utils';
 import { FlushTask } from './FlushTask';
+import { Keys } from '../../constant';
+import { ReceivedRecordMapper } from '../../db/mapper/ReceiveRecordMapper';
 
 const TAG = 'FlushService'
 
 const DOWNLOAD_FILES_DIR: string = 'received'
 
+/**
+ * 文件写入服务
+ */
 export class FlushService {
   private exchange: HttpExchange | null
   private stream: fs.Stream | undefined
@@ -32,16 +37,26 @@ export class FlushService {
     this.startMilli = Dates.now()
   }
 
+  /**
+   * 添加到文件写入队列
+   * @param flush
+   */
   flush(flush: FlushTask) {
     this.add(flush)
   }
 
+  /**
+   * 文件写入结束
+   */
   end() {
     //因为onStream是异步执行的调用onFinish时onStream可以还未执行结束
     //这里用isFinished标记下
     this.isFinished = true
   }
 
+  /**
+   * 取消文件写入
+   */
   cancel() {
     this.isCanceled = true
   }
@@ -85,6 +100,7 @@ export class FlushService {
         if (this.checkCancel()) {
           return
         }
+        //发送文件写入进度信息
         const elapsed = Dates.consumed(lastNotice)
         if (elapsed > 200) {
           const duration = Dates.consumed(this.startMilli)
@@ -127,6 +143,7 @@ export class FlushService {
         total: this.fileInfo.size,
         speed: 0
       })
+      this.toHistory()
     }
   }
 
@@ -166,5 +183,27 @@ export class FlushService {
   private close() {
     this.stream?.close()
     this.stream = undefined
+  }
+
+  private toHistory() {
+    if (AppStorage.get<boolean>(Keys.SAVE_RECEIVE_RECORD) === true) {
+      const sender = DeviceProvider.getDevice(this.exchange?.getRemoteAddress()?.address || '')
+      if (!sender) {
+        return
+      }
+      const dir: string = `${this.fileDir}/${DOWNLOAD_FILES_DIR}`
+      const filePath = `${dir}/${this.fileInfo.fileName}`
+      const record = new ReceiveRecordModel()
+      record.fileName = this.fileInfo.fileName
+      record.fileType = this.fileInfo.fileType
+      record.filePath = filePath
+      record.size = this.fileInfo.size
+      record.sender = sender.alias
+      record.sendAt = Dates.now()
+      const mapper = new ReceivedRecordMapper()
+      mapper.insert(record)
+    } else {
+      console.info('当前未开启保存接收记录')
+    }
   }
 }
