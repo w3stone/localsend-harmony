@@ -210,11 +210,13 @@ export struct Send {
         onAction: (action: DialogAction) => {
           if (action === DialogAction.ONE && this.mPasteboardAuthorizeDialogId != null) {
             DialogHelper.closeDialog(this.mPasteboardAuthorizeDialogId)
+            this.mPasteboardAuthorizeDialogId = null
           }
         },
         onAuthorized: () => {
           if (this.mPasteboardAuthorizeDialogId != null) {
             DialogHelper.closeDialog(this.mPasteboardAuthorizeDialogId)
+            this.mPasteboardAuthorizeDialogId = null
           }
           let clipboard: pasteboard.SystemPasteboard = pasteboard.getSystemPasteboard();
           clipboard.getData()

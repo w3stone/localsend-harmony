@@ -96,7 +96,7 @@ export struct ReceiveRecordPage {
   }
 
   aboutToAppear(): void {
-    new ReceivedRecordMapper().getPage(this.current, 1000, new Wapper())
+    new ReceivedRecordMapper().getPage(this.current, 1000, new Wapper().orderByDesc('id'))
       .then((page: Page<ReceiveRecordModel>) => {
         console.info(`接收记录: ${JSON.stringify(page)}`)
         this.current = page.current
@@ -113,6 +113,9 @@ export struct ReceiveRecordPage {
       .then(() => {
         logger.debug('ReceiveRecordPage', `接收记录已删除 index: ${index} id: ${id} file name: ${this.records[index].fileName}`)
         this.records.splice(index, 1)
+        if (this.records.length === 0) {
+          this.total = 0
+        }
       })
       .catch((e: object) => {
         logger.warn('ReceiveRecordPage', `删除记录出错: ${Errors.getErrorMessage(e)}`)

@@ -11,8 +11,6 @@ import { ReceivedRecordMapper } from '../../db/mapper/ReceiveRecordMapper';
 
 const TAG = 'FlushService'
 
-const DOWNLOAD_FILES_DIR: string = 'received'
-
 /**
  * 文件写入服务
  */
@@ -24,6 +22,7 @@ export class FlushService {
   private fileDir: string
   private progress: number = 0
   private fileInfo: FileInfoModel
+  private filePath: string = ''
   private queue: FlushTask[] = []
   private lock_: ArkTSUtils.locks.AsyncLock = new ArkTSUtils.locks.AsyncLock();
   private startMilli: number = 0
@@ -34,6 +33,7 @@ export class FlushService {
     this.exchange = exchange
     this.fileDir = fileDir
     this.fileInfo = fileInfo
+    this.filePath = `${fileDir}/${fileInfo.fileName}`
     this.startMilli = Dates.now()
   }
 
@@ -62,18 +62,17 @@ export class FlushService {
   }
 
   private async create(): Promise<void> {
-    let filePath: string = ''
     try {
-      const dir: string = `${this.fileDir}/${DOWNLOAD_FILES_DIR}`
-      filePath = `${dir}/${this.fileInfo.fileName}`
-      if (!await fs.access(dir, fs.AccessModeType.EXIST)) {
-        console.log(`--- 准备创建文件夹: ${dir}`)
-        await fs.mkdir(dir)
+      if (!await fs.access(this.fileDir, fs.AccessModeType.EXIST)) {
+        console.log(`--- 文件夹不存在 准备创建文件夹: ${this.fileDir}`)
+        await fs.mkdir(this.fileDir)
+        console.log(`--- 文件夹创建完成: ${this.fileDir}`)
       }
-      this.stream = await fs.createStream(filePath, 'w')
-      console.log(`--- 文件创建成功: ${filePath}`)
+      this.filePath = await FileProvider.getUniqueFilepath(this.filePath)
+      this.stream = await fs.createStream(this.filePath, 'w')
+      console.log(`--- 文件创建成功: ${this.filePath}`)
     } catch (e) {
-      console.log(`--- 文件创建失败: ${filePath} ${Errors.getErrorMessage(e)}`)
+      console.log(`--- 文件创建失败: ${this.filePath} ${Errors.getErrorMessage(e)}`)
       this.stream?.close()
       throw HttpError.error(500)
     }
@@ -115,6 +114,7 @@ export class FlushService {
           })
           this.lastNoticeMilli = Dates.now()
         }
+        //当前buffer写完成后再次检查队列
         if (this.queue.length > 0) {
           await this.process(this.lastNoticeMilli)
           return
@@ -131,6 +131,7 @@ export class FlushService {
         speed: 0,
         error: e
       })
+      FileProvider.deleteFile(this.filePath)
     }
     this.isFlushing = false; // 任务处理完成
     if (this.isFinished) {
@@ -141,7 +142,8 @@ export class FlushService {
         status: FileTransferStatus.COMPLETED,
         progress: this.fileInfo.size,
         total: this.fileInfo.size,
-        speed: 0
+        speed: 0,
+        filePath: this.filePath
       })
       this.toHistory()
     }
@@ -188,17 +190,12 @@ export class FlushService {
   private toHistory() {
     if (AppStorage.get<boolean>(Keys.SAVE_RECEIVE_RECORD) === true) {
       const sender = DeviceProvider.getDevice(this.exchange?.getRemoteAddress()?.address || '')
-      if (!sender) {
-        return
-      }
-      const dir: string = `${this.fileDir}/${DOWNLOAD_FILES_DIR}`
-      const filePath = `${dir}/${this.fileInfo.fileName}`
       const record = new ReceiveRecordModel()
       record.fileName = this.fileInfo.fileName
       record.fileType = this.fileInfo.fileType
-      record.filePath = filePath
+      record.filePath = this.filePath
       record.size = this.fileInfo.size
-      record.sender = sender.alias
+      record.sender = sender?.alias || 'unknown'
       record.sendAt = Dates.now()
       const mapper = new ReceivedRecordMapper()
       mapper.insert(record)

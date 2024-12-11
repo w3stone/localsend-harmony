@@ -1,6 +1,7 @@
 
 export class ReceiveRecordModel {
   id: number = NaN
+  fileId: string = ''
   fileName: string = ''
   fileType: string = ''
   size: number = 0

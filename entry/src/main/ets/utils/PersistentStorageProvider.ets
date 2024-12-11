@@ -19,7 +19,7 @@ export class PersistentStorageProvider {
     }
     //保存接收记录
     if (AppStorage.get(Keys.SAVE_RECEIVE_RECORD) == undefined) {
-      PersistentStorage.persistProp(Keys.SAVE_RECEIVE_RECORD, undefined)
+      PersistentStorage.persistProp(Keys.SAVE_RECEIVE_RECORD, true)
     }
     //随机生成一个别名
     if (AppStorage.get(Keys.ALIAS) == undefined) {

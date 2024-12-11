@@ -7,6 +7,7 @@ import { Errors } from 'common';
 const getRow = (res: relationalStore.ResultSet): ReceiveRecordModel => {
   const record: ReceiveRecordModel = new ReceiveRecordModel()
   record.id = res.getLong(res.getColumnIndex('id'))
+  record.fileId = res.getString(res.getColumnIndex('fileId'))
   record.fileName = res.getString(res.getColumnIndex('fileName'))
   record.size = res.getLong(res.getColumnIndex('size'))
   record.fileType = res.getString(res.getColumnIndex('fileType'))
@@ -28,6 +29,7 @@ export class ReceivedRecordMapper extends LocalSendMapper<ReceiveRecordModel> {
       `create table if not exists ${tbName}
         (
             id          integer primary key autoincrement,
+            fileId      varchar(100),
             fileName    varchar(100),
             size        integer,
             fileType    varchar(100),

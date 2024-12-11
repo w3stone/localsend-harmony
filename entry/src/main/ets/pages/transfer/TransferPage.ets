@@ -1,5 +1,5 @@
-import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
-import { Screens, SizeConstant } from 'common';
+import { DialogAction, DialogHelper, SpinType } from '@pura/harmony-dialog';
+import { Screens, SizeConstant, toast } from 'common';
 import { IconButton, NavigationTitle } from '../../components';
 import {
   DeviceModel,
@@ -14,6 +14,8 @@ import { Dates, FileProvider, Routers } from '../../utils';
 import { FileItem } from './FileItem';
 import { EventBus, EventType } from '../../eventbus';
 import { emitter } from '@kit.BasicServicesKit';
+import { MoveFileDialogBuilder, MoveFileDialogOptions } from './MoveFileDialogBuilder';
+import { JSON } from '@kit.ArkTS';
 
 @Builder
 export function TransferPageBuilder() {
@@ -26,7 +28,7 @@ export struct TransferPage {
   @State topPadding: Length = 0
   @State bottomPadding: Length = 0
   //总大小
-  @State total: number = 100
+  @State total: number = 0
   //总进度
   @State totalProgress: number = 0
   //当前文件传输进度
@@ -56,6 +58,7 @@ export struct TransferPage {
       this.isTransferInfoChanging = false
     }
   }
+  mMoveFileAuthorizeDialogId: string | undefined
 
   build() {
     NavDestination() {
@@ -300,6 +303,9 @@ export struct TransferPage {
           }
           if (!this.allCompleted && this.completed === this.param.files.length) {
             this.allCompleted = true
+            if (!this.param.isSent) {
+              this.onReceiveComplete()
+            }
           }
         }
         const index = this.param.files.findIndex((info: FileInfoModel) => info.id === action.fileId)
@@ -307,6 +313,9 @@ export struct TransferPage {
           this.status[action.fileId].status = action.status.valueOf()
           if (action.status == FileTransferStatus.TRANSFERRING) {
             this.status[action.fileId].progress = Number.parseFloat(((action.progress / action.total) * 100).toFixed(2))
+          } else if (action.status == FileTransferStatus.COMPLETED) {
+            this.status[action.fileId].status = action.status
+            this.status[action.fileId].filePath = action.filePath
           }
         }
       }
@@ -327,5 +336,60 @@ export struct TransferPage {
     } else {
       this.mTransferInfoHeight = 0
     }
+  }
+
+  /**
+   * 接收完成，弹窗提示移动文件到Download应用文件夹
+   */
+  onReceiveComplete() {
+    this.mMoveFileAuthorizeDialogId = DialogHelper.showCustomDialog<MoveFileDialogOptions>(
+      wrapBuilder(MoveFileDialogBuilder),
+      {
+        uiContext: this.getUIContext(),
+        onAction: (action: DialogAction) => {
+          if (action === DialogAction.ONE && this.mMoveFileAuthorizeDialogId != null) {
+            DialogHelper.closeDialog(this.mMoveFileAuthorizeDialogId)
+            this.mMoveFileAuthorizeDialogId = null
+          }
+        },
+        context: getContext(this),
+        onMovementAuthorized: () => {
+          if (this.mMoveFileAuthorizeDialogId != null) {
+            DialogHelper.closeDialog(this.mMoveFileAuthorizeDialogId)
+            this.mMoveFileAuthorizeDialogId = null
+          }
+          this.doMoveReceiveFiles()
+        },
+      }
+    )
+  }
+
+  private async doMoveReceiveFiles() {
+    DialogHelper.showLoadingDialog({
+      loadType: SpinType.spinZ,
+      loadColor: $r('app.color.on_container'),
+      backgroundColor: $r('app.color.container'),
+      autoCancel: false
+    })
+    const files: string[] = []
+    const keys: string[] = Object.keys(this.status)
+    for (let i = 0; i < keys.length; i++) {
+      const element: FileTransferInfo = this.status[keys[i]]
+      if (element.status === FileTransferStatus.COMPLETED && element.filePath) {
+        files.push(FileProvider.getFileName(element.filePath))
+      }
+    }
+    let succeed = 0
+    if (files.length > 0) {
+      succeed = await FileProvider.moveFilesToDownload(getContext(this), files)
+      if (succeed === 0) {
+        toast.show($r('app.string.file_move_failed'))
+      } else if (succeed === files.length) {
+        toast.show($r('app.string.file_move_complete'))
+      } else {
+        toast.show($r('app.string.some_file_move_failed'))
+      }
+    }
+    DialogHelper.closeLoading()
   }
 }

@@ -6,6 +6,7 @@ import { buffer, util } from '@kit.ArkTS';
 import { mime } from './mime';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { photoAccessHelper } from '@kit.MediaLibraryKit';
+import { Context } from '@kit.AbilityKit';
 
 const TAG = 'FileProvider'
 
@@ -184,7 +185,7 @@ export class FileProvider {
    * @returns
    */
   static getDefaultFileDir(context: Context): string {
-    return context.filesDir
+    return `${context.filesDir}/received`
   }
 
   /**
@@ -378,5 +379,78 @@ export class FileProvider {
    */
   static getTransferSpeed(size: number, duration: number): number {
     return Number.parseFloat((size / (duration / 1000)).toFixed(2))
+  }
+
+  /**
+   * 生成一个新的文件名，添加一个后缀（例如 "_1"）
+   * @param filePath 文件路径
+   * @returns
+   */
+  static async getUniqueFilepath(filePath: string): Promise<string> {
+    let extension = '', fileName = filePath;
+    const extIndex = filePath.lastIndexOf('.')
+    if (extIndex > -1) {
+      extension = filePath.substring(filePath.lastIndexOf('.'));
+      fileName = filePath.substring(0, filePath.lastIndexOf('.'));
+    }
+    let counter = 1;
+    let newFilePath = filePath;
+    while (await fs.access(newFilePath, fs.AccessModeType.EXIST)) {
+      newFilePath = `${fileName}_${counter}${extension}`;
+      counter++;
+    }
+    return newFilePath
+  }
+
+  /**
+   * 获取文件管理Download文件夹应用保存沙箱路径
+   * @param context comm.Context
+   * @returns
+   */
+  static async getDownloadSandboxDir(context: Context): Promise<string[]> {
+    const options = new picker.DocumentSaveOptions();
+    if (canIUse('SystemCapability.FileManagement.UserFileService')) {
+      options.pickerMode = picker.DocumentPickerMode.DOWNLOAD;
+    }
+    return new picker.DocumentViewPicker(context).save(options)
+  }
+
+  /**
+   * 移动文件到Download/package文件夹
+   * @param context
+   * @param fileNames 移动的文件名
+   * @returns
+   */
+  static async moveFilesToDownload(context: Context, fileNames: string[]): Promise<number> {
+    let succeed: number = 0
+    try {
+      const documentSaveResult: string[] = await FileProvider.getDownloadSandboxDir(context)
+      if (documentSaveResult && documentSaveResult.length > 0) {
+        for (const fileName of fileNames) {
+          const srcPath = `${FileProvider.getDefaultFileDir(context)}/${fileName}`;
+          let destPath = `${new fileUri.FileUri(documentSaveResult[0]).path}/${fileName}`;
+          console.info(`开始移动文件\nsrc: ${srcPath}\ndest: ${destPath}`)
+          await fs.moveFile(srcPath, destPath)
+          console.info(`文件移动完成 src: ${srcPath}\ntarget: ${destPath}`)
+          succeed += 1
+        }
+      }
+    } catch (e) {
+      console.error(`文件移动失败: ${Errors.getErrorMessage(e)}`);
+    }
+    return succeed
+  }
+
+  /**
+   * 删除文件
+   * @param filePath 文件路径
+   * @returns
+   */
+  static async deleteFile(filePath: string): Promise<void> {
+    try {
+      await fs.unlink(filePath)
+    } catch (e) {
+      console.error(`文件删除失败: ${Errors.getErrorMessage(e)}`);
+    }
   }
 }

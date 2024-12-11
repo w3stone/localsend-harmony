@@ -309,6 +309,30 @@
       "value": "继续"
     },
     {
+      "name": "file_transfer_complete",
+      "value": "文件传输完成"
+    },
+    {
+      "name": "file_move_to_download_tips",
+      "value": "由于系统限制，当前文件存放在应用沙箱目录中(文件管理中不可见)，点击下方按钮将文件移动至“Download/LocalSend”文件夹"
+    },
+    {
+      "name": "file_move_to_download_error",
+      "value": "操作失败，未能获取到临时权限"
+    },
+    {
+      "name": "file_move_failed",
+      "value": "文件移动失败"
+    },
+    {
+      "name": "some_file_move_failed",
+      "value": "部分文件移动失败"
+    },
+    {
+      "name": "file_move_complete",
+      "value": "文件移动完成"
+    },
+    {
       "name": "alias_text",
       "value": "别名："
     },

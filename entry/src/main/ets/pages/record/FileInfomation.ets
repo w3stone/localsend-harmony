@@ -10,6 +10,7 @@ const lineHeight = 22
 @Component
 export struct FileInfomation {
   @Prop data: ReceiveRecordModel
+  @State isLongPress: boolean = false
 
   build() {
     RelativeContainer() {
@@ -46,7 +47,7 @@ export struct FileInfomation {
         text: this.data.filePath,
         textSize: SizeConstant.TEXT_L,
         textColor: $r('app.color.on_background'),
-        ellipsisMode: EllipsisMode.END,
+        overflow: this.isLongPress ? TextOverflow.MARQUEE : TextOverflow.Ellipsis,
         modifier: new TextModifier().lineHeight(lineHeight)
       })
         .id('file_path_value')
@@ -122,6 +123,14 @@ export struct FileInfomation {
     }
     .width('100%')
     .height('auto')
+    .gesture(LongPressGesture()
+      .onAction(() => {
+        this.isLongPress = true
+      })
+      .onActionEnd(() => {
+        this.isLongPress = false
+      })
+    )
   }
 
   aboutToAppear(): void {

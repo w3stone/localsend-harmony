@@ -1,6 +1,6 @@
 import { logger, Screens, SizeConstant } from 'common';
 import { WebService } from '../../../../service';
-import { Routers } from '../../../../utils';
+import { FileProvider, Routers } from '../../../../utils';
 import { EventBus, EventType, NumberEventData } from '../../../../eventbus';
 import { Icon } from '../../../../components';
 import { Keys } from '../../../../constant';
@@ -148,7 +148,7 @@ export struct Receive {
   }
 
   aboutToAppear(): void {
-    service.setFilesSaveDir(getContext(this).filesDir)
+    service.setFilesSaveDir(FileProvider.getDefaultFileDir(getContext(this)))
     service.start()
     EventBus.getInstance().on(EventType.SCAN_DEVICE, () => {
       logger.info('ReceivePage', 'receive event: scanning device')

@@ -1,18 +1,16 @@
 import { RandomUtil } from '@pura/harmony-utils';
-import { fileUri, fileIo as fs, picker } from '@kit.CoreFileKit';
-import { Errors, SizeConstant, toast } from 'common';
+import { fileIo as fs } from '@kit.CoreFileKit';
+import { Errors, SizeConstant } from 'common';
 import { Icon, NavigationTitle } from '../../components';
 import { buffer, JSON } from '@kit.ArkTS';
 import { DeviceProvider, FileProvider, mime, ObservedArray } from '../../utils';
-import { photoAccessHelper } from '@kit.MediaLibraryKit';
 import { cryptoFramework } from '@kit.CryptoArchitectureKit';
-import { common } from '@kit.AbilityKit';
-import { BusinessError } from '@kit.BasicServicesKit';
 import { DeviceMapper } from '../../db/mapper';
 import { Connection, Page, Wapper } from 'rdbplus';
 import { CardColumn } from './CardColumn';
 import { NearbyDeviceModel, ReceiveRecordModel } from '../../model';
 import { ReceivedRecordMapper } from '../../db/mapper/ReceiveRecordMapper';
+import { DialogHelper, SpinType } from '@pura/harmony-dialog';
 
 @Builder
 export function DeveloperToolsPageBuilder() {
@@ -29,8 +27,8 @@ export struct DeveloperToolsPage {
   @State selected: string | null = null
   @State saveButtonOptions: SaveButtonOptions = {
     icon: SaveIconStyle.FULL_FILLED,
-    // text: SaveDescription.SAVE_IMAGE,
-    buttonType: ButtonType.Normal
+    text: SaveDescription.SAVE_FILE,
+    buttonType: ButtonType.Capsule
   }
 
   build() {
@@ -66,7 +64,7 @@ export struct DeveloperToolsPage {
               }
             }
 
-            CardColumn() {
+            CardColumn({ title: '文件转存' }) {
               List({ space: 10 }) {
                 ForEach(this.fileNames, (fileName: string) => {
                   ListItem() {
@@ -76,10 +74,7 @@ export struct DeveloperToolsPage {
                       Icon({ src: $r('app.media.ic_delete') }).onClick(() => {
                         this.delFile(fileName)
                       })
-                      SaveButton(this.saveButtonOptions)
-                        .onClick(async (_, result: SaveButtonOnClickResult) => {
-                          this.onSaveImageToAlbumClick(result, fileName)
-                        })
+                      Blank().width(10)
                     }
                   }
                   .onClick(() => {
@@ -93,12 +88,16 @@ export struct DeveloperToolsPage {
               .constraintSize({ maxHeight: 200 })
 
               Blank().height(SizeConstant.SPACE_M)
-              Row() {
-                Button('获取已接收文件列表').onClick(() => {
-                  this.getFiles()
-                })
+              Button('获取已接收文件列表').onClick(() => {
+                this.getFiles()
+              })
+              if (this.fileNames && this.fileNames.length > 0) {
+                Blank().height(SizeConstant.SPACE_M)
+                SaveButton(this.saveButtonOptions)// .size({ width: SizeConstant.ICON_XL, height: SizeConstant.ICON_XL })
+                  .onClick(async (_, result: SaveButtonOnClickResult) => {
+                    this.onSaveImageToAlbumClick(result, this.fileNames)
+                  })
               }
-
               Blank().height(SizeConstant.SPACE_M)
               Row() {
                 Button('获取发送缓存列表').onClick(() => {
@@ -110,9 +109,14 @@ export struct DeveloperToolsPage {
                 })
               }
 
+              Blank().height(SizeConstant.SPACE_M)
+              Button('获取已接收文件列表').onClick(() => {
+                this.getFiles()
+              })
+              Blank().height(SizeConstant.SPACE_M)
             }
 
-            CardColumn() {
+            CardColumn({ title: '收藏夹' }) {
               Button('删除表').onClick(() => {
                 this.onDropDeviceTableClick()
               })
@@ -125,14 +129,6 @@ export struct DeveloperToolsPage {
                 this.onCollectedClick()
               })
               Blank().height(SizeConstant.SPACE_M)
-              // Button('Can i use').onClick(() => {
-              //   if (!canIUse('SystemCapability.FileManagement.AppFileService.FolderAuthorization')) {
-              //     console.error('this api is not supported on this device');
-              //     return;
-              //   } else {
-              //     console.info('this api is supported on this device');
-              //   }
-              // })
             }
 
             CardColumn({ title: '接收记录' }) {
@@ -148,6 +144,26 @@ export struct DeveloperToolsPage {
                 this.onClearReceiveRecordClick()
               })
               Blank().height(SizeConstant.SPACE_M)
+            }
+
+            CardColumn({ title: '弹窗' }) {
+              Button('Loading').onClick(() => {
+                DialogHelper.showLoadingDialog({
+                  loadType: SpinType.spinZ,
+                  loadColor: $r('app.color.on_container'),
+                  fontColor: $r('app.color.on_container'),
+                  // loadSize: 70,
+                  backgroundColor: $r('app.color.container'),
+                  // fontSize: 18,
+                  // padding: {
+                  //   top: 30,
+                  //   right: 50,
+                  //   bottom: 30,
+                  //   left: 50
+                  // },
+                  autoCancel: true
+                })
+              })
             }
           }
           .justifyContent(FlexAlign.Start)
@@ -224,35 +240,37 @@ export struct DeveloperToolsPage {
     await mapper.getList(new Wapper())
   }
 
-  async onSaveImageToAlbumClick(result: SaveButtonOnClickResult, fileName: string) {
+  async onSaveImageToAlbumClick(result: SaveButtonOnClickResult, fileNames: string[]) {
     if (result == SaveButtonOnClickResult.SUCCESS) {
-      try {
-        let context = getContext();
-        let phAccessHelper = photoAccessHelper.getPhotoAccessHelper(context);
-        // 需要确保fileUri对应的资源存在
-        const fileUri: string = `${getContext(this).filesDir}/received/${fileName}`
-        const fileType: string | null = mime.getType(fileUri)
-        if (fileType?.startsWith('image')) {
-          let assetChangeRequest: photoAccessHelper.MediaAssetChangeRequest =
-            photoAccessHelper.MediaAssetChangeRequest.createImageAssetRequest(context, fileUri);
-          await phAccessHelper.applyChanges(assetChangeRequest);
-          console.info('createAsset successfully, uri: ' + assetChangeRequest.getAsset().uri);
-          toast.show('转存成功')
-        } else if (fileType?.startsWith('video')) {
-          let assetChangeRequest: photoAccessHelper.MediaAssetChangeRequest =
-            photoAccessHelper.MediaAssetChangeRequest.createVideoAssetRequest(context, fileUri);
-          await phAccessHelper.applyChanges(assetChangeRequest);
-          toast.show('转存成功')
-          console.info('createAsset successfully, uri: ' + assetChangeRequest.getAsset().uri);
-        } else if (fileType?.startsWith('application')) {
-          let uri: string = `${getContext(this).filesDir}/received/${fileName}`
-          this.saveFileToDownload(uri)
-          // 请确保 getContext(this) 返回结果为 UIAbilityContext
+      // const fileType: string = mime.getType(fileName) || ''
+      // console.info(`save file. type: ${fileType}`)
+      // try {
+      //   let context = getContext();
+      //   let phAccessHelper = photoAccessHelper.getPhotoAccessHelper(context);
+      //   // 需要确保fileUri对应的资源存在
+      //   const fileUri: string = `${getContext(this).filesDir}/received/${fileName}`
+      //   const fileType: string | null = mime.getType(fileUri)
+      //   if (fileType?.startsWith('image')) {
+      //     let assetChangeRequest: photoAccessHelper.MediaAssetChangeRequest =
+      //       photoAccessHelper.MediaAssetChangeRequest.createImageAssetRequest(context, fileUri);
+      //     await phAccessHelper.applyChanges(assetChangeRequest);
+      //     console.info('createAsset successfully, uri: ' + assetChangeRequest.getAsset().uri);
+      //     toast.show('转存成功')
+      //   } else if (fileType?.startsWith('video')) {
+      //     let assetChangeRequest: photoAccessHelper.MediaAssetChangeRequest =
+      //       photoAccessHelper.MediaAssetChangeRequest.createVideoAssetRequest(context, fileUri);
+      //     await phAccessHelper.applyChanges(assetChangeRequest);
+      //     toast.show('转存成功')
+      //     console.info('createAsset successfully, uri: ' + assetChangeRequest.getAsset().uri);
+      //   } else if (fileType?.startsWith('application')) {
+      //     this.saveFileToDownload(fileName)
+      //     // 请确保 getContext(this) 返回结果为 UIAbilityContext
+      //   }
+      // } catch (err) {
+      //   console.error(`create asset failed with error: ${err.code}, ${err.message}`);
+      // }
 
-        }
-      } catch (err) {
-        console.error(`create asset failed with error: ${err.code}, ${err.message}`);
-      }
+      FileProvider.moveFilesToDownload(getContext(this), fileNames)
     } else {
       console.error('SaveButtonOnClickResult create asset failed');
     }
@@ -306,41 +324,6 @@ export struct DeveloperToolsPage {
       console.info('...calFileMd5: ' + buffer.from(mdOutput.data).toString('hex'));
     } catch (e) {
       console.info('...calFileMd5 error: ' + Errors.getErrorMessage(e));
-    }
-  }
-
-  async getSaveFile(newFileNames: string[]): Promise<Array<string>> {
-    // 请确保 getContext(this) 返回结果为 UIAbilityContext
-    let context = getContext(this) as common.Context;
-    const documentViewPicker = new picker.DocumentViewPicker(context);
-    const documentSaveOptions = new picker.DocumentSaveOptions();
-    documentSaveOptions.pickerMode = picker.DocumentPickerMode.DOWNLOAD;
-    documentSaveOptions.newFileNames = newFileNames
-    return await documentViewPicker.save(documentSaveOptions)
-    // if (result.length > 0) {
-    //   logger.info('DevTool', `save result: ${JSON.stringify(result)}`)
-    //   const uri = result[0] + '/' + newFileNames[0]
-    //   logger.info('DevTool', `fileName: ${uri}`)
-    //   AppStorage.setOrCreate('FILE_SAVE_DIR', uri)
-    //   return uri
-    // } else {
-    //   toast.show('获取保存目录失败')
-    //   return ''
-    // }
-  }
-
-  async saveFileToDownload(fileName: string) {
-    const documentSaveResult: string[] = await this.getSaveFile([fileName])
-    if (documentSaveResult && documentSaveResult.length > 0) {
-      let fileUriObject = new fileUri.FileUri(documentSaveResult[0]);
-      let directoryUri = fileUriObject.getFullDirectoryUri();
-      const dirPath = getContext(this).filesDir;
-      let destPath = dirPath + directoryUri;
-      fs.copyDir(getContext(this).filesDir + '/received', destPath, fs.OpenMode.READ_WRITE).then(() => {
-        console.info("copy directory succeed");
-      }).catch((err: BusinessError) => {
-        console.error(`copy directory failed with error message: ${err.message} , error code: ${err.code}`);
-      });
     }
   }
 
