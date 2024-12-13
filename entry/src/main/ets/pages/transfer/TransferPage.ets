@@ -1,11 +1,12 @@
-import { DialogAction, DialogHelper, SpinType } from '@pura/harmony-dialog';
-import { Screens, SizeConstant, toast } from 'common';
+import { DialogAction, DialogHelper, SpinKit, SpinType } from '@pura/harmony-dialog';
+import { Errors, logger, Screens, SizeConstant, Strings, toast } from 'common';
 import { IconButton, NavigationTitle } from '../../components';
 import {
   DeviceModel,
   FileInfoModel,
   FileTransferInfo,
   FileTransferStatus,
+  IMoveFile,
   TransferPageParam,
   TransferProgressChangedAction
 } from '../../model';
@@ -15,7 +16,9 @@ import { FileItem } from './FileItem';
 import { EventBus, EventType } from '../../eventbus';
 import { emitter } from '@kit.BasicServicesKit';
 import { MoveFileDialogBuilder, MoveFileDialogOptions } from './MoveFileDialogBuilder';
-import { JSON } from '@kit.ArkTS';
+import { Keys } from '../../constant';
+import { ReceivedRecordMapper } from '../../db/mapper/ReceiveRecordMapper';
+import { Wapper } from 'rdbplus';
 
 @Builder
 export function TransferPageBuilder() {
@@ -59,132 +62,147 @@ export struct TransferPage {
     }
   }
   mMoveFileAuthorizeDialogId: string | undefined
+  @State isMovingFile: boolean = false
 
   build() {
     NavDestination() {
-      NavigationTitle({
-        title: this.param.isSent ? $r('app.string.sending_files') : $r('app.string.receiving_files'),
-        isHideBackButton: true
-      }) {
-        RelativeContainer() {
+      Stack() {
+        NavigationTitle({
+          title: this.param.isSent ? $r('app.string.sending_files') : $r('app.string.receiving_files'),
+          isHideBackButton: true
+        }) {
+          RelativeContainer() {
 
-          List({ space: SizeConstant.SPACE_M }) {
-            ForEach(this.param.files, (item: FileInfoModel) => {
-              ListItem() {
-                FileItem({ file: item, status: this.status[item.id] })
-              }
-            }, (item: FileInfoModel, index: number) => `${item.id}_${index}`)
-            ListItem().height(this.bottomPadding)
-          }
-          .width('100%')
-          .height('100%')
-          .padding({
-            left: SizeConstant.SPACE_L,
-            top: this.topPadding,
-            right: SizeConstant.SPACE_L,
-          })
-          .backgroundColor($r('app.color.background'))
-          .listDirection(Axis.Vertical)
-
-          Text($r('app.string.save_directory', ''))
+            List({ space: SizeConstant.SPACE_M }) {
+              ForEach(this.param.files, (item: FileInfoModel) => {
+                ListItem() {
+                  FileItem({ file: item, status: this.status[item.id] })
+                }
+              }, (item: FileInfoModel, index: number) => `${item.id}_${index}`)
+              ListItem().height(this.bottomPadding)
+            }
             .width('100%')
-            .fontColor($r('app.color.on_background'))
-            .fontSize(SizeConstant.TEXT_XL)
-            .textAlign(TextAlign.Start)
-            .alignRules({
-              top: { anchor: "__container__", align: VerticalAlign.Top },
-              start: { anchor: "__container__", align: HorizontalAlign.Start }
+            .height('100%')
+            .padding({
+              left: SizeConstant.SPACE_L,
+              top: this.topPadding,
+              right: SizeConstant.SPACE_L,
             })
-            .margin({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
-            .padding({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
-            .visibility(this.param.isSent ? Visibility.None : Visibility.Visible)
-            .onAreaChange((_: Area, newValue: Area) => {
-              this.topPadding = newValue.height
-            })
+            .backgroundColor($r('app.color.background'))
+            .listDirection(Axis.Vertical)
 
-          // 底部传输进度
-          Column() {
+            Text($r('app.string.save_directory', FileProvider.getDefaultFileDir(getContext(this))))
+              .width('100%')
+              .fontColor($r('app.color.on_background'))
+              .fontSize(SizeConstant.TEXT_XL)
+              .textAlign(TextAlign.Start)
+              .alignRules({
+                top: { anchor: "__container__", align: VerticalAlign.Top },
+                start: { anchor: "__container__", align: HorizontalAlign.Start }
+              })
+              .margin({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
+              .padding({ top: SizeConstant.SPACE_L, bottom: SizeConstant.SPACE_L })
+              .visibility(this.param.isSent ? Visibility.None : Visibility.Visible)
+              .onAreaChange((_: Area, newValue: Area) => {
+                this.topPadding = newValue.height
+              })
+
+            // 底部传输进度
             Column() {
-              Text(this.getTotalEstimatedTimeText())
-                .fontSize(SizeConstant.TEXT_XXL)
-                .fontColor($r('app.color.on_background'))
-                .width('100%')
-                .textAlign(TextAlign.Start)
-              Blank().height(SizeConstant.SPACE_M)
-              Progress({ value: this.percentage, total: 100, type: ProgressType.Linear })
-                .style({ strokeWidth: 10, enableSmoothEffect: true })
-                .color($r('app.color.primary'))
-
-              //高级信息
               Column() {
+                Text(this.getTotalEstimatedTimeText())
+                  .fontSize(SizeConstant.TEXT_XXL)
+                  .fontColor($r('app.color.on_background'))
+                  .width('100%')
+                  .textAlign(TextAlign.Start)
+                Blank().height(SizeConstant.SPACE_M)
+                Progress({ value: this.percentage, total: 100, type: ProgressType.Linear })
+                  .style({ strokeWidth: 10, enableSmoothEffect: true })
+                  .color($r('app.color.primary'))
+
+                //高级信息
                 Column() {
-                  Blank().height(SizeConstant.SPACE_M)
-                  Text($r('app.string.file_of_numbers', `${this.completed}/${this.param.files.length}`))
-                    .fontSize(SizeConstant.TEXT_L)
-                  Text($r('app.string.size_text',
-                    `${FileProvider.formatBytes(this.totalProgress + this.progress)} / ${FileProvider.formatBytes(this.total)}`))
-                    .fontSize(SizeConstant.TEXT_L)
-                  Text($r('app.string.speed_text', `${FileProvider.formatBytes(this.speed)}/s`))
-                    .fontSize(SizeConstant.TEXT_L)
+                  Column() {
+                    Blank().height(SizeConstant.SPACE_M)
+                    Text($r('app.string.file_of_numbers', `${this.completed}/${this.param.files.length}`))
+                      .fontSize(SizeConstant.TEXT_L)
+                    Text($r('app.string.size_text',
+                      `${FileProvider.formatBytes(this.totalProgress + this.progress)} / ${FileProvider.formatBytes(this.total)}`))
+                      .fontSize(SizeConstant.TEXT_L)
+                    Text($r('app.string.speed_text', `${FileProvider.formatBytes(this.speed)}/s`))
+                      .fontSize(SizeConstant.TEXT_L)
+                  }
+                  .width('100%')
+                  .alignItems(HorizontalAlign.Start)
+                  .visibility(this.isTransferInfoChanging ? Visibility.Hidden : Visibility.Visible)
                 }
                 .width('100%')
-                .alignItems(HorizontalAlign.Start)
-                .visibility(this.isTransferInfoChanging ? Visibility.Hidden : Visibility.Visible)
-              }
-              .width('100%')
-              .height(this.mTransferInfoHeight)
-              .animation(this.mTransferInfoAnim)
+                .height(this.mTransferInfoHeight)
+                .animation(this.mTransferInfoAnim)
 
-              Blank().height(SizeConstant.SPACE_M)
-              //高级 - 取消
-              Row() {
-                IconButton({
-                  icon: $r('app.media.ic_detail'),
-                  text: this.isTransferInfoDisplay ? $r('app.string.hide') : $r('app.string.advanced'),
-                  iconColor: $r('app.color.on_container'),
-                  iconSize: SizeConstant.ICON_L,
-                  arrangement: FlexDirection.Row
-                }).onClick(() => {
-                  this.onTransferInfoDisplayClick()
-                })
-                Blank().width(SizeConstant.SPACE_XXL)
-                IconButton({
-                  icon: this.allCompleted ? $r('app.media.ic_ok_filled') : $r('app.media.ic_cancel_filled'),
-                  text: this.allCompleted ? $r('app.string.complete') : $r('app.string.cancel'),
-                  iconColor: $r('app.color.on_container'),
-                  iconSize: SizeConstant.ICON_L,
-                  arrangement: FlexDirection.Row
-                }).onClick(() => {
-                  if (this.allCompleted) {
-                    FileProvider.setTransferComplete()
-                    if (this.param.isSent) {
-                      FileProvider.clearMediaCache(getContext(this))
+                Blank().height(SizeConstant.SPACE_M)
+                //高级 - 取消
+                Row() {
+                  IconButton({
+                    icon: $r('app.media.ic_detail'),
+                    text: this.isTransferInfoDisplay ? $r('app.string.hide') : $r('app.string.advanced'),
+                    iconColor: $r('app.color.on_container'),
+                    iconSize: SizeConstant.ICON_L,
+                    arrangement: FlexDirection.Row
+                  }).onClick(() => {
+                    this.onTransferInfoDisplayClick()
+                  })
+                  Blank().width(SizeConstant.SPACE_XXL)
+                  IconButton({
+                    icon: this.allCompleted ? $r('app.media.ic_ok_filled') : $r('app.media.ic_cancel_filled'),
+                    text: this.allCompleted ? $r('app.string.complete') : $r('app.string.cancel'),
+                    iconColor: $r('app.color.on_container'),
+                    iconSize: SizeConstant.ICON_L,
+                    arrangement: FlexDirection.Row
+                  }).onClick(() => {
+                    if (this.allCompleted) {
+                      FileProvider.setTransferComplete()
+                      if (this.param.isSent) {
+                        FileProvider.clearMediaCache(getContext(this))
+                      }
+                      this.pages.pop()
+                    } else {
+                      this.showCancelDialog()
                     }
-                    this.pages.pop()
-                  } else {
-                    this.showCancelDialog()
-                  }
-                })
+                  })
+                }
+                .width('100%')
+                .justifyContent(FlexAlign.End)
               }
-              .width('100%')
-              .justifyContent(FlexAlign.End)
+              .margin({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
+              .padding(SizeConstant.SPACE_L)
+              .backgroundBlurStyle(BlurStyle.BACKGROUND_THIN, {})
+              .borderRadius(SizeConstant.RADIUS_L)
             }
-            .margin({ left: SizeConstant.SPACE_L, right: SizeConstant.SPACE_L })
-            .padding(SizeConstant.SPACE_L)
-            .backgroundBlurStyle(BlurStyle.BACKGROUND_THIN, {})
-            .borderRadius(SizeConstant.RADIUS_L)
+            .alignRules({
+              bottom: { anchor: "__container__", align: VerticalAlign.Bottom }
+            })
+            .padding({ bottom: Screens.getNavigationBarHeight() })
+            .onAreaChange((_: Area, newValue: Area) => {
+              this.bottomPadding = newValue.height
+            })
           }
-          .alignRules({
-            bottom: { anchor: "__container__", align: VerticalAlign.Bottom }
-          })
-          .padding({ bottom: Screens.getNavigationBarHeight() })
-          .onAreaChange((_: Area, newValue: Area) => {
-            this.bottomPadding = newValue.height
-          })
+          .height('100%')
+          .width('100%')
+          .backgroundColor($r('app.color.container'))
         }
-        .height('100%')
-        .width('100%')
-        .backgroundColor($r('app.color.container'))
+
+        if (this.isMovingFile) {
+          Stack()
+            .size({ width: '100%', height: '100%' })
+            .backgroundColor($r('app.color.mask_background'))
+          Column() {
+            SpinKit({ spinType: SpinType.spinZ, spinColor: $r('app.color.on_container') }).align(Alignment.Center)
+          }
+          .padding(SizeConstant.SPACE_L)
+          .borderRadius(SizeConstant.RADIUS_M)
+          .backgroundColor($r('app.color.container'))
+        }
       }
     }
     .height('100%')
@@ -209,6 +227,7 @@ export struct TransferPage {
       for (const temp of this.param.files) {
         this.total += temp.size
         this.status[temp.id] = new FileTransferInfo()
+        this.status[temp.id].fileId = temp.id
         this.status[temp.id].status = FileTransferStatus.QUEUE
       }
     }
@@ -303,7 +322,7 @@ export struct TransferPage {
           }
           if (!this.allCompleted && this.completed === this.param.files.length) {
             this.allCompleted = true
-            if (!this.param.isSent) {
+            if (!this.param.isSent && action.status === FileTransferStatus.COMPLETED) {
               this.onReceiveComplete()
             }
           }
@@ -353,7 +372,7 @@ export struct TransferPage {
           }
         },
         context: getContext(this),
-        onMovementAuthorized: () => {
+        onMovementAuthorized: async () => {
           if (this.mMoveFileAuthorizeDialogId != null) {
             DialogHelper.closeDialog(this.mMoveFileAuthorizeDialogId)
             this.mMoveFileAuthorizeDialogId = null
@@ -365,31 +384,64 @@ export struct TransferPage {
   }
 
   private async doMoveReceiveFiles() {
-    DialogHelper.showLoadingDialog({
-      loadType: SpinType.spinZ,
-      loadColor: $r('app.color.on_container'),
-      backgroundColor: $r('app.color.container'),
-      autoCancel: false
-    })
-    const files: string[] = []
-    const keys: string[] = Object.keys(this.status)
-    for (let i = 0; i < keys.length; i++) {
-      const element: FileTransferInfo = this.status[keys[i]]
-      if (element.status === FileTransferStatus.COMPLETED && element.filePath) {
-        files.push(FileProvider.getFileName(element.filePath))
+    //picker.DocumentViewPicker(context).save(options) 导致了loading不显示?
+    // DialogHelper.showLoadingDialog({
+    //   loadType: SpinType.spinZ,
+    //   loadColor: $r('app.color.on_container'),
+    //   backgroundColor: $r('app.color.container'),
+    //   autoCancel: false,
+    //   isModal: false
+    // })
+    /**
+     * DocumentViewPicker会导致Dialog无法正常显示
+     * @link https://developer.huawei.com/consumer/cn/doc/harmonyos-releases-V5/changelogs-ux-b071-V5#%E6%A8%A1%E6%80%81uiextension%E5%88%9B%E5%BB%BA%E9%BB%98%E8%AE%A4%E8%A1%8C%E4%B8%BA%E5%8F%98%E6%9B%B4
+     */
+    this.isMovingFile = true
+    try {
+      const completeFileInfos: FileTransferInfo[] = []
+      const keys: string[] = Object.keys(this.status)
+      for (let i = 0; i < keys.length; i++) {
+        const element: FileTransferInfo = this.status[keys[i]]
+        if (element.status === FileTransferStatus.COMPLETED && element.filePath) {
+          completeFileInfos.push(element)
+        }
       }
-    }
-    let succeed = 0
-    if (files.length > 0) {
-      succeed = await FileProvider.moveFilesToDownload(getContext(this), files)
-      if (succeed === 0) {
-        toast.show($r('app.string.file_move_failed'))
-      } else if (succeed === files.length) {
-        toast.show($r('app.string.file_move_complete'))
-      } else {
-        toast.show($r('app.string.some_file_move_failed'))
+      let succeed = 0
+      if (completeFileInfos.length > 0) {
+        succeed = await FileProvider.moveFilesToDownload(getContext(this), completeFileInfos, (moved: IMoveFile) => {
+          this.onMovedFileComplete(moved)
+        })
+        if (succeed === 0) {
+          toast.show($r('app.string.file_move_failed'))
+        } else if (succeed === completeFileInfos.length) {
+          toast.show($r('app.string.file_move_complete'))
+        } else {
+          toast.show($r('app.string.some_file_move_failed'))
+        }
       }
+    } catch (e) {
+      logger.warn('TransferPage', `移动文件出错: ${Errors.getErrorMessage(e)}`)
+    } finally {
+      // DialogHelper.closeLoading()
+      this.isMovingFile = false
     }
-    DialogHelper.closeLoading()
+  }
+
+  private onMovedFileComplete(moved: IMoveFile) {
+    if (this.param.isSent || !AppStorage.get<boolean>(Keys.SAVE_RECEIVE_RECORD) ||
+      !(moved instanceof FileTransferInfo) || Strings.isEmpty(moved.getFilepath())) {
+      logger.debug('TransferPage', `更新接收记录 已跳过`)
+      return
+    }
+    new ReceivedRecordMapper().update(new Wapper().set('filePath', moved.getFilepath()).eq('fileId', moved.fileId))
+      .then(() => {
+        logger.debug('TransferPage', `更新接收记录成功 => fileId: ${moved.fileId} newFilePath: ${moved.getFilepath()}`)
+      })
+      .catch((reason: object) => {
+        logger.warn(
+          'TransferPage',
+          `更新接收记录失败 => fileId: ${moved.fileId} newFilePath: ${moved.getFilepath()} Error: ${Errors.getErrorMessage(reason)}`
+        )
+      })
   }
 }

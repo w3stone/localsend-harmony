@@ -55,6 +55,10 @@
     {
       "name": "button_background",
       "value": "#2C2D2F"
+    },
+    {
+      "name": "mask_background",
+      "value": "#40000000"
     }
   ]
 }

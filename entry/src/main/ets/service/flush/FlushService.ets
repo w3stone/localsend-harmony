@@ -177,6 +177,7 @@ export class FlushService {
         speed: 0
       })
       this.close()
+      FileProvider.deleteFile(this.filePath)
       return true
     }
     return false
@@ -191,6 +192,7 @@ export class FlushService {
     if (AppStorage.get<boolean>(Keys.SAVE_RECEIVE_RECORD) === true) {
       const sender = DeviceProvider.getDevice(this.exchange?.getRemoteAddress()?.address || '')
       const record = new ReceiveRecordModel()
+      record.fileId = this.fileInfo.id
       record.fileName = this.fileInfo.fileName
       record.fileType = this.fileInfo.fileType
       record.filePath = this.filePath

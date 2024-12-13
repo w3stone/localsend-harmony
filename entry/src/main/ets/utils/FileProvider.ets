@@ -1,4 +1,4 @@
-import { FileInfoModel, FileReceiveQueueModel, PendingSendFile, PrepareTransferModel, PrepareUploadModel } from '../model';
+import { FileInfoModel, FileReceiveQueueModel, IMoveFile, PendingSendFile, PrepareTransferModel, PrepareUploadModel } from '../model';
 import { Keys } from '../constant';
 import { Errors, logger, Strings } from 'common';
 import { fileUri, fileIo as fs, picker } from '@kit.CoreFileKit';
@@ -421,18 +421,21 @@ export class FileProvider {
    * @param fileNames 移动的文件名
    * @returns
    */
-  static async moveFilesToDownload(context: Context, fileNames: string[]): Promise<number> {
+  static async moveFilesToDownload(context: Context, fileInfos: IMoveFile[], onMoved?: (info: IMoveFile) => void): Promise<number> {
     let succeed: number = 0
     try {
       const documentSaveResult: string[] = await FileProvider.getDownloadSandboxDir(context)
       if (documentSaveResult && documentSaveResult.length > 0) {
-        for (const fileName of fileNames) {
-          const srcPath = `${FileProvider.getDefaultFileDir(context)}/${fileName}`;
-          let destPath = `${new fileUri.FileUri(documentSaveResult[0]).path}/${fileName}`;
+        for (const fileInfo of fileInfos) {
+          const srcPath = fileInfo.getFilepath();
+          let destPath = `${new fileUri.FileUri(documentSaveResult[0]).path}/${FileProvider.getFileName(srcPath)}`;
+          destPath = await FileProvider.getUniqueFilepath(destPath)
           console.info(`开始移动文件\nsrc: ${srcPath}\ndest: ${destPath}`)
           await fs.moveFile(srcPath, destPath)
+          fileInfo.setNewFilepath(destPath)
           console.info(`文件移动完成 src: ${srcPath}\ntarget: ${destPath}`)
           succeed += 1
+          onMoved?.(fileInfo)
         }
       }
     } catch (e) {

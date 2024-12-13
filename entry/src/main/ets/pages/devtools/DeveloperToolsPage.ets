@@ -8,13 +8,29 @@ import { cryptoFramework } from '@kit.CryptoArchitectureKit';
 import { DeviceMapper } from '../../db/mapper';
 import { Connection, Page, Wapper } from 'rdbplus';
 import { CardColumn } from './CardColumn';
-import { NearbyDeviceModel, ReceiveRecordModel } from '../../model';
+import { NearbyDeviceModel, ReceiveRecordModel, SimpleMoveFile } from '../../model';
 import { ReceivedRecordMapper } from '../../db/mapper/ReceiveRecordMapper';
-import { DialogHelper, SpinType } from '@pura/harmony-dialog';
+import { BaseDialogOptions, DialogAction, DialogHelper, SpinType } from '@pura/harmony-dialog';
 
 @Builder
 export function DeveloperToolsPageBuilder() {
   DeveloperToolsPage()
+}
+
+@Builder
+function CustomDialogBuilder(options: BaseDialogOptions) {
+  Column() {
+    Text('Custom Text')
+    Button($r('app.string.cancel'), { buttonStyle: ButtonStyleMode.TEXTUAL })
+      .width('100%')
+      .fontColor($r('app.color.on_container_secondary'))
+      .onClick(() => {
+        if (options.onAction) {
+          options.onAction(DialogAction.ONE, '', '')
+        }
+      })
+  }
+  .backgroundColor($r('app.color.container'))
 }
 
 @Component
@@ -152,17 +168,37 @@ export struct DeveloperToolsPage {
                   loadType: SpinType.spinZ,
                   loadColor: $r('app.color.on_container'),
                   fontColor: $r('app.color.on_container'),
-                  // loadSize: 70,
                   backgroundColor: $r('app.color.container'),
-                  // fontSize: 18,
-                  // padding: {
-                  //   top: 30,
-                  //   right: 50,
-                  //   bottom: 30,
-                  //   left: 50
-                  // },
                   autoCancel: true
                 })
+              })
+              Blank().height(SizeConstant.SPACE_M)
+              Button('Async Loading').onClick(async () => {
+                DialogHelper.showLoadingDialog({
+                  loadType: SpinType.spinZ,
+                  loadColor: $r('app.color.on_container'),
+                  fontColor: $r('app.color.on_container'),
+                  backgroundColor: $r('app.color.container'),
+                  autoCancel: true
+                })
+              })
+              Blank().height(SizeConstant.SPACE_M)
+              Button('弹窗内弹窗').onClick(() => {
+                DialogHelper.showCustomDialog(
+                  wrapBuilder(CustomDialogBuilder),
+                  {
+                    onAction: async () => {
+                      DialogHelper.showLoadingDialog({
+                        loadType: SpinType.spinZ,
+                        loadColor: $r('app.color.on_container'),
+                        fontColor: $r('app.color.on_container'),
+                        backgroundColor: $r('app.color.container'),
+                        autoCancel: false
+                      })
+                      await this.onCollectedClick()
+                    }
+                  } as BaseDialogOptions,
+                )
               })
             }
           }
@@ -269,8 +305,11 @@ export struct DeveloperToolsPage {
       // } catch (err) {
       //   console.error(`create asset failed with error: ${err.code}, ${err.message}`);
       // }
-
-      FileProvider.moveFilesToDownload(getContext(this), fileNames)
+      const infos: SimpleMoveFile[] = []
+      for (const element of fileNames) {
+        infos.push(new SimpleMoveFile(`${FileProvider.getDefaultFileDir(getContext(this))}/${element}`))
+      }
+      FileProvider.moveFilesToDownload(getContext(this), infos)
     } else {
       console.error('SaveButtonOnClickResult create asset failed');
     }

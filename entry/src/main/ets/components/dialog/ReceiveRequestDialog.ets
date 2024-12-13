@@ -105,7 +105,8 @@ export struct ReceiveRequestDialog {
           iconSize: SizeConstant.ICON_L,
           arrangement: FlexDirection.Row,
         }).onClick(() => {
-          this.page.pushDestination({ name: Routers.RECEIVE_SETTING_PAGE, param: this.data })
+          toast.show('todo')
+          // this.page.pushDestination({ name: Routers.RECEIVE_SETTING_PAGE, param: this.data })
         })
         Blank().height(34)
         Row() {

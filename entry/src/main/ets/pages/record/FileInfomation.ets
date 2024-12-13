@@ -132,8 +132,4 @@ export struct FileInfomation {
       })
     )
   }
-
-  aboutToAppear(): void {
-    logger.info('FileInfomation', `FileInfomation: ${this.data}`)
-  }
 }
