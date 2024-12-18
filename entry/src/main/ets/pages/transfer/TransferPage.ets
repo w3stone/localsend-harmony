@@ -72,11 +72,10 @@ export struct TransferPage {
           isHideBackButton: true
         }) {
           RelativeContainer() {
-
             List({ space: SizeConstant.SPACE_M }) {
               ForEach(this.param.files, (item: FileInfoModel) => {
                 ListItem() {
-                  FileItem({ file: item, status: this.status[item.id] })
+                  FileItem({ file: item, status: this.status[item.id]})
                 }
               }, (item: FileInfoModel, index: number) => `${item.id}_${index}`)
               ListItem().height(this.bottomPadding)
@@ -91,7 +90,8 @@ export struct TransferPage {
             .backgroundColor($r('app.color.background'))
             .listDirection(Axis.Vertical)
 
-            Text($r('app.string.save_directory', FileProvider.getDefaultFileDir(getContext(this))))
+            // Text($r('app.string.save_directory', FileProvider.getDefaultFileDir(getContext(this))))
+            Text($r('app.string.save_directory', '/Download/LocalSend'))
               .width('100%')
               .fontColor($r('app.color.on_background'))
               .fontSize(SizeConstant.TEXT_XL)

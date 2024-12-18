@@ -6,7 +6,7 @@ import { SelectorButton } from './SelectorButton';
 import { DeviceItem } from '../../../../components/DeviceItem';
 import { SelectedFiles } from './SelctedFiles';
 import { FileProvider, ObservedArray, Routers } from '../../../../utils';
-import { FileInfoModel, NearbyDeviceModel } from '../../../../model';
+import { NearbyDeviceModel, PendingSendFile } from '../../../../model';
 import { DialogAction, DialogHelper } from '@pura/harmony-dialog';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { Footer } from './Footer';
@@ -21,7 +21,7 @@ import { ClickUtil } from '@pura/harmony-utils';
 export struct Send {
   @Consume('pages') pages: NavPathStack
   @StorageLink(DeviceProvider.REGISTERED_DEVICE_LIST_KEY) allDevice: NearbyDeviceModel[] = []
-  @State selectedFiles: ObservedArray<FileInfoModel> = []
+  @State selectedFiles: ObservedArray<PendingSendFile> = []
   // @State toDevice: DeviceModel | null = null
   // mSendFileRequestDialog: CustomDialogController | null = new CustomDialogController({
   //   width: '100%',
@@ -54,9 +54,7 @@ export struct Send {
           Row() {
             SelectorButton({ text: $r('app.string.file'), icon: $r('app.media.ic_file') })
               .layoutWeight(1)
-              .onClick(() => ClickUtil.throttle(() => {
-                this.addSelectFile(getContext(this))
-              }))
+              .onClick(() => ClickUtil.throttle(() => this.addSelectFile(getContext(this))))
             Blank().width(SizeConstant.SPACE_M)
             // if (canIUse('SystemCapability.FileManagement.UserFileService.FolderSelection')) {
             //   SelectorButton({ text: $r('app.string.folder'), icon: $r('app.media.ic_folder_filled') })
@@ -169,7 +167,7 @@ export struct Send {
 
   addSelectFile(context: Context) {
     FileProvider.selectFile(context, this.selectedFiles)
-      .then((files: FileInfoModel[]) => {
+      .then((files: PendingSendFile[]) => {
         this.selectedFiles.push(...files)
       })
       .catch((e: Error) => {
@@ -179,7 +177,7 @@ export struct Send {
 
   addMediaClick(context: Context) {
     FileProvider.getMedia(context, this.selectedFiles)
-      .then((files: FileInfoModel[]) => {
+      .then((files: PendingSendFile[]) => {
         this.selectedFiles.push(...files)
       })
       .catch((e: Error) => {

@@ -14,7 +14,8 @@ export struct FileItem {
       FileIcon({
         fileName: this.file.fileName,
         fileType: this.file.fileType,
-        bgColor: $r('app.color.container')
+        bgColor: $r('app.color.container'),
+        filePath: this.status.filePath
       })
 
       Blank().width(SizeConstant.SPACE_M)
@@ -40,7 +41,7 @@ export struct FileItem {
         } else {
           Text(this.getStatusText())
             .fontSize(SizeConstant.TEXT_L)
-            .fontColor($r('app.color.on_container_secondary'))
+            .fontColor(this.isComplete() ? $r('app.color.highlights') : $r('app.color.on_container_secondary'))
         }
       }
       .layoutWeight(1)
@@ -87,5 +88,9 @@ export struct FileItem {
         text = $r('app.string.cancel')
     }
     return text
+  }
+
+  isComplete(): boolean {
+    return this.status?.status === FileTransferStatus.COMPLETED
   }
 }

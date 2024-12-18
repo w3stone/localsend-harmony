@@ -113,6 +113,10 @@ export class FileProvider {
     return $r(`app.media.${resName}`)
   }
 
+  static isImage(fileType: string): boolean {
+    return fileType.startsWith('image')
+  }
+
   /**
    * 获取文件后缀
    * @param fileName 文件名

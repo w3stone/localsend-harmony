@@ -1,13 +1,13 @@
 import { SizeConstant } from 'common';
 import { FileIcon, Icon, IconButton } from '../../../../components';
-import { FileInfoModel } from '../../../../model';
+import { PendingSendFile } from '../../../../model';
 import { FileProvider, ObservedArray, Routers } from '../../../../utils';
 import { ClickUtil } from '@pura/harmony-utils';
 
 @Component
 export struct SelectedFiles {
   @Consume('pages') pages: NavPathStack
-  @Link files: ObservedArray<FileInfoModel>
+  @Link files: ObservedArray<PendingSendFile>
   onAppendClick?: () => void = undefined
 
   build() {
@@ -35,11 +35,16 @@ export struct SelectedFiles {
 
       Blank().height(SizeConstant.SPACE_M)
       List({ space: SizeConstant.SPACE_M }) {
-        ForEach(this.files || [], (file: FileInfoModel) => {
+        ForEach(this.files || [], (file: PendingSendFile) => {
           ListItem() {
-            FileIcon({ fileName: file.fileName, fileType: file.fileType, bgColor: $r('app.color.container') })
+            FileIcon({
+              fileName: file.fileName,
+              fileType: file.fileType,
+              bgColor: $r('app.color.container'),
+              filePath: file.filePath
+            })
           }
-        }, (file: FileInfoModel, index: number) => `${file.id}_${index}`)
+        }, (file: PendingSendFile, index: number) => `${file.id}_${index}`)
       }
       .scrollBar(BarState.Off)
       .listDirection(Axis.Horizontal)
@@ -52,7 +57,7 @@ export struct SelectedFiles {
           .fontColor($r('app.color.on_background'))
           .onClick(() => ClickUtil.throttle(() => {
             this.pages.pushPathByName(Routers.EDITOR_PAGE, this.files, (info: PopInfo) => {
-              this.files = info.result as ObservedArray<FileInfoModel>
+              this.files = info.result as ObservedArray<PendingSendFile>
             })
           }))
 
@@ -70,7 +75,7 @@ export struct SelectedFiles {
             right: SizeConstant.SPACE_XL,
             bottom: SizeConstant.SPACE_EXTRA_S
           })
-          .onClick(() => ClickUtil.throttle(() => this.onAppendClick))
+          .onClick(() => ClickUtil.throttle(() => this.onAppendClick?.()))
       }
       .width('100%')
       .justifyContent(FlexAlign.End)

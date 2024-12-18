@@ -142,7 +142,6 @@ export struct SendRequestPage {
     })
     .onBackPressed(() => {
       return this.onBackPress()
-      return true;
     })
     .onDisAppear(() => {
       CustomTransition.getInstance().unRegisterNavParam(this.pageId || '');
