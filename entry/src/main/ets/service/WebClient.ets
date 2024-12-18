@@ -2,6 +2,7 @@ import {
   BaseResponse,
   FileInfoKeyMap,
   FileInfoModel,
+  FileTransferStatus,
   PrepareTransferModel,
   PrepareUploadModel,
   StringPair,
@@ -10,7 +11,7 @@ import {
 import { ContentType, HttpRequest, Terminator } from '../http';
 import { Dates, DeviceProvider, FileProvider } from '../utils';
 import { ApiConstant } from '../constant/ApiConstant';
-import { logger, Objects } from 'common';
+import { Errors, logger, Objects } from 'common';
 import { JSON } from '@kit.ArkTS';
 import { DeviceModel } from '../model/DeviceModel';
 import { UploaderServer } from './upload/UploadServer';
@@ -88,12 +89,23 @@ export class WebClient {
       server.terminate()
     })
     try {
-      let index: number = 0
-      let testPartsStart: number = 1250
+      // let index: number = 0
+      // let testPartsStart: number = 1250
       for (const pending of files) {
         if (isCanceled) {
           logger.info(TAG, `文件发送取消 id: ${pending.id}`)
           break
+        }
+        //接收方未选择接收该文件
+        if (!fileTokens[pending.id]) {
+          WebClient.onUploadProgressChanged({
+            fileId: pending.id,
+            status: FileTransferStatus.SKIPPED,
+            progress: 0,
+            total: pending.size,
+            speed: 0
+          })
+          continue
         }
         const url = `${ApiConstant.UPLOAD}?sessionId=${sessionId}&fileId=${pending.id}&token=${fileTokens[pending.id]}`
         const parts = FileProvider.getFilePortLength(pending.size)
@@ -111,6 +123,8 @@ export class WebClient {
             `文件上传完成 分片长度: ${partsStr} 文件大小: ${pending.size} => ${fileSize} 上传耗时: ${consumed}ms 平均上传速度: ${speed}`)
         }
       }
+    } catch (e) {
+      logger.warn(TAG, `上传文件出错: ${Errors.getErrorMessage(e)}`)
     } finally {
       server.disconnection()
       EventBus.getInstance().unregister(EventType.UPLOAD_FILE_CANCELED)
