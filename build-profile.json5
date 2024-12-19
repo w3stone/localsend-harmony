@@ -57,7 +57,7 @@
     },
     {
       "name": "serve",
-      "srcPath": "./sub_modules/serve",
+      "srcPath": "./serve"
     }
   ]
 }

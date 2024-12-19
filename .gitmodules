@@ -1,3 +1,0 @@
-[submodule "sub_modules"]
-	path = sub_modules
-	url = git@github.com:azhu003/ohos-serve.git
