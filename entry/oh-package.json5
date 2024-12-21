@@ -10,7 +10,7 @@
     "serve": "file:../serve",
     "@pura/harmony-dialog": "1.0.6",
     "@pura/harmony-utils": "1.2.4",
-    "rdbplus": "1.0.6"
+    "rdbplus": "file:../entry/libs/rdbplus-1.0.8.har"
   }
 }
 

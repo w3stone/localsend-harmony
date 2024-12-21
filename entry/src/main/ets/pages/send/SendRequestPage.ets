@@ -211,12 +211,17 @@ export struct SendRequestPage {
     if (this.target && this.files.length > 0) {
       WebClient.prepareUpload(this.target, this.files, this.pin, (terminate: Terminator) => this.terminate = terminate)
         .then((result: PrepareTransferModel) => {
-          this.sessionId = result.sessionId
-          const parma = new TransferPageParam(true, this.files)
-          parma.sessionId = result.sessionId
-          parma.target = [this.target!!]
-          parma.fileToken = result.files
-          this.pages.replacePath({ name: Routers.TRANSFER_PAGE, param: parma })
+          if (Object.keys(result).length == 0) {
+            //仅发送单个文本时，接收方直接复制后会返回无body得204码，无需跳转发送界面
+            this.pages.pop()
+          } else {
+            this.sessionId = result.sessionId
+            const parma = new TransferPageParam(true, this.files)
+            parma.sessionId = result.sessionId
+            parma.target = [this.target!!]
+            parma.fileToken = result.files
+            this.pages.replacePath({ name: Routers.TRANSFER_PAGE, param: parma })
+          }
         })
         .catch((reason: object) => {
           if (reason instanceof HttpRequestError) {

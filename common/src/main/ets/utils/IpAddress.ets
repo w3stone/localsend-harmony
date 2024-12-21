@@ -1,5 +1,3 @@
-import assertThrowError from '@ohos/hypium/src/main/module/assert/assertThrowError'
-
 export class IpAddress {
 
    isIpv4Address(ip: string): boolean {
@@ -26,7 +24,9 @@ export class IpAddress {
   }
 
   ip2int(ip: string): number {
-    assertThrowError(this.isIpv4Address(ip), true)
+    if (!this.isIpv4Address(ip)) {
+      throw new Error('invalid ipv4 address')
+    }
     let result = 0;
     let lines: Array<string> = ip.split(".");
     for (let pattern of lines) {

@@ -66,7 +66,7 @@ export struct ReceiveRequestDialog {
         .constraintSize({ maxHeight: 80 })
         .borderRadius(SizeConstant.RADIUS_M)
         .padding(SizeConstant.SPACE_M)
-        .backgroundColor($r('app.color.background'))
+        .backgroundColor($r('app.color.container'))
 
         Blank().height(SizeConstant.SPACE_M)
         Button($r('app.string.copy'))

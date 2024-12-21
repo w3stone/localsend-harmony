@@ -57,7 +57,9 @@ async function request<T extends BaseResponse>(url: string, method: http.Request
     }
     HttpLogging.print(url, options)
     const resp = await request.request(url, options);
-    if (resp.responseCode == 200 && resp.result) {
+    if (resp.responseCode == 204) {
+      return Promise.resolve(new Object as T)
+    } else if (resp.responseCode == 200 && resp.result) {
       const result: T = JSON.parse(resp.result as string) as T
       return Promise.resolve(result)
     } else {
