@@ -118,7 +118,7 @@ export class UploaderServer implements Terminator {
         speed: 0,
         error: e
       })
-      return Promise.reject()
+      return Promise.reject(e)
     } finally {
       if (file) {
         fs.close(file)
