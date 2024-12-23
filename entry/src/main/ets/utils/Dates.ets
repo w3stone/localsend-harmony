@@ -36,4 +36,12 @@ export class Dates {
     time += `${seconds.toString().padStart(2, '0')}`
     return time
   }
+
+  static delay(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve()
+      }, ms)
+    })
+  }
 }
