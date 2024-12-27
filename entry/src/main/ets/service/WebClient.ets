@@ -130,7 +130,7 @@ export class WebClient {
       logger.warn(TAG, `上传文件出错: ${Errors.getErrorMessage(e)}`)
     } finally {
       //延迟10ms后关闭链接，防止LocalSend接收端出现接收未完成时链接被关闭报错
-      await Dates.delay(10)
+      await Dates.delay(50)
       server.disconnection()
       EventBus.getInstance().unregister(EventType.UPLOAD_FILE_CANCELED)
     }

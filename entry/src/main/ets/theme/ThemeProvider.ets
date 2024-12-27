@@ -13,7 +13,12 @@ export class ThemeProvider {
    * @returns
    */
   static getThemeModel(): ConfigurationConstant.ColorMode {
-    return AppStorage.get<ConfigurationConstant.ColorMode>(Keys.COLOR_MODE) || ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET
+    const mode: ConfigurationConstant.ColorMode | undefined = AppStorage.get<ConfigurationConstant.ColorMode>(Keys.COLOR_MODE)
+    if (mode == undefined) {
+      return ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET
+    } else {
+      return mode
+    }
   }
 
   static setSystemColorModeUpdate(system: ConfigurationConstant.ColorMode | undefined) {

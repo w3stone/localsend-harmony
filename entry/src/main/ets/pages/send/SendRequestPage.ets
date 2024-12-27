@@ -197,7 +197,6 @@ export struct SendRequestPage {
         } else {
           this.isInteractive = false
         }
-        console.info(`this.isInteractive: ${this.isInteractive}`)
         this.longTakeAnimationProperties.doAnimation(transitionProxy);
       });
       logger.info('SendRequestPage', 'CardLongTakePageTwo register successes');

@@ -11,6 +11,9 @@ import { CardColumn } from './CardColumn';
 import { NearbyDeviceModel, ReceiveRecordModel, SimpleMoveFile } from '../../model';
 import { ReceivedRecordMapper } from '../../db/mapper/ReceiveRecordMapper';
 import { BaseDialogOptions, DialogAction, DialogHelper, SpinType } from '@pura/harmony-dialog';
+import { common, ConfigurationConstant, Want } from '@kit.AbilityKit';
+import { ThemeProvider } from '../../theme/ThemeProvider';
+import { Keys } from '../../constant';
 
 @Builder
 export function DeveloperToolsPageBuilder() {
@@ -200,6 +203,33 @@ export struct DeveloperToolsPage {
                   } as BaseDialogOptions,
                 )
               })
+            }
+
+            CardColumn({ title: '文件管理' }) {
+              Button('跳转文件管理').onClick(() => {
+                const context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
+                let want: Want = {
+                  bundleName: 'com.huawei.hmos.filemanager',
+                  abilityName: 'MainAbility'
+                };
+                context.startAbility(want);
+              })
+              Blank().height(SizeConstant.SPACE_M)
+            }
+
+            CardColumn({ title: '主题设置' }) {
+              Button('浅色模式').onClick(() => {
+                ThemeProvider.setThemeModel(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT)
+              })
+              Button('深色模式').onClick(() => {
+                ThemeProvider.setThemeModel(ConfigurationConstant.ColorMode.COLOR_MODE_DARK)
+              })
+              Button('当前设置').onClick(() => {
+                const mode: ConfigurationConstant.ColorMode | undefined = AppStorage.get<ConfigurationConstant.ColorMode>(Keys.COLOR_MODE)
+                console.info(`theme mode: ${mode}`)
+              })
+              Blank().height(SizeConstant.SPACE_M)
+
             }
           }
           .justifyContent(FlexAlign.Start)

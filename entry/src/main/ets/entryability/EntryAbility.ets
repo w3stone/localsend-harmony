@@ -27,8 +27,9 @@ export default class EntryAbility extends UIAbility {
       //系统是否是深色模式
       let mode = this.context.config.colorMode
       ThemeProvider.setSystemColorModeUpdate(mode)
+      this.context.getApplicationContext().setColorMode(ThemeProvider.getThemeModel());
+
       DialogProvider.init(this.context)
-      logger.error("EntryAbility", "init")
 
       let win: window.Window = windowStage.getMainWindowSync() // 获取应用主窗口
       win.setWindowLayoutFullScreen(true)
