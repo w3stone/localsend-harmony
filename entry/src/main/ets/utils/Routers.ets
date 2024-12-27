@@ -9,5 +9,6 @@ export class Routers {
   static RECEIVE_SETTING_PAGE = 'ReceiveSettingPage'
   static EDITOR_PAGE = 'EditorPage'
   static QUESTION_PAGE = 'QuestionPage'
+  static ABOUT_PAGE = 'AboutPage'
   static DEVELOPER_TOOLS = 'DeveloperToolsPage'
 }

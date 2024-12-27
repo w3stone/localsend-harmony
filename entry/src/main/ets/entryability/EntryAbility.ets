@@ -1,4 +1,4 @@
-import { logger, Screens } from 'common';
+import { Screens } from 'common';
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { window } from '@kit.ArkUI';
 import { Configuration } from '@ohos.app.ability.Configuration';

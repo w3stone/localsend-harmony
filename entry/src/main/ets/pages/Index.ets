@@ -10,8 +10,8 @@ import { QuestionPage } from './question/QuestionPage';
 import { ReceiveSettingPage } from './receive/ReceiveSettingPage';
 import { SendRequestPage } from './send/SendRequestPage';
 import { AnimateCallback, CustomTransition } from '../transaction';
-import { JSON } from '@kit.ArkTS';
 import { Objects } from 'common';
+import { AboutPage } from './about/AboutPage';
 
 @Entry
 @Component
@@ -37,6 +37,8 @@ struct Index {
       EditorPage()
     } else if (name == Routers.QUESTION_PAGE) {
       QuestionPage()
+    } else if (name == Routers.ABOUT_PAGE) {
+      AboutPage()
     } else if (name == Routers.DEVELOPER_TOOLS) {
       DeveloperToolsPage()
     }

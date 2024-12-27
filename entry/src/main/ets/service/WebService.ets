@@ -22,10 +22,11 @@ import { FlushService } from './flush/FlushService';
 
 const TAG: string = "WebService"
 
-const udp: socket.MulticastSocket = socket.constructMulticastSocketInstance();
-const server: HttpServer = createHttpServer()
 
 export class WebService {
+  udp: socket.MulticastSocket = socket.constructMulticastSocketInstance();
+  server: HttpServer = createHttpServer()
+
   isRunning: boolean = false
   filesDir: string = ''
   alias: string = ''
@@ -45,15 +46,15 @@ export class WebService {
       this.port = AppStorage.get(Keys.PORT) || 53317
       this.multicast = AppStorage.get(Keys.MULTICAST_ADDRESS) || '224.0.0.167'
 
-      await udp.addMembership({ address: this.multicast, port: this.port })
+      await this.udp.addMembership({ address: this.multicast, port: this.port })
       logger.info(TAG, `>>>--- UDP 组播已添加 -> Running: ${this.multicast}:${this.port}`)
-      udp.on("listening", () => {
+      this.udp.on("listening", () => {
         logger.info(TAG, `---<<< UDP  -> listening`);
       })
-      udp.on('close', () => {
+      this.udp.on('close', () => {
         logger.info(TAG, `---<<< UDP  -> close`);
       })
-      udp.on('message', (info: socket.SocketMessageInfo) => {
+      this.udp.on('message', (info: socket.SocketMessageInfo) => {
         let message = Strings.buf2String(info.message)
         let device: DeviceModel = JSON.parse(message) as DeviceModel
         if (device && device.fingerprint != DeviceProvider.getDeviceFingerprint() && device.announce == true) {
@@ -63,7 +64,7 @@ export class WebService {
           WebClient.register(device)
         }
       })
-      const isRunning = await server.bind({ address: '0.0.0.0', port: this.port })
+      const isRunning = await this.server.bind({ address: '0.0.0.0', port: this.port })
         .get('/', this.index)
         .get('/api/localsend/v1/info', this.info)
         .post('/api/localsend/v2/register', this.register)
@@ -87,10 +88,10 @@ export class WebService {
   async stop(): Promise<void> {
     this.isRunning = false
     try {
-      udp.off("message")
-      await udp.dropMembership({ address: this.multicast, port: this.port })
-      await udp.close()
-      await server.stop()
+      this.udp.off("message")
+      await this.server.stop()
+      await this.udp.dropMembership({ address: this.multicast, port: this.port })
+      await this.udp.close()
       logger.info(TAG, `WebService stoped!`)
     } catch (e) {
       logger.warn(TAG, `WebService stop error: ${Errors.getErrorMessage(e)}`)
@@ -105,7 +106,7 @@ export class WebService {
       data: JSON.stringify(new MulticastModel(true)),
       address: address
     }
-    udp.send(options, (err: BusinessError) => {
+    this.udp.send(options, (err: BusinessError) => {
       if (err) {
         logger.error(TAG, "--->>> UDP 组播失败 %s", JSON.stringify(err))
       } else {

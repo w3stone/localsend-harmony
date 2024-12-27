@@ -247,9 +247,10 @@ export struct Setting {
                 .fontSize(SizeConstant.TEXT_XXL)
                 .fontColor($r('app.color.on_background'))
                 .padding(SizeConstant.SPACE_M)
-              SettingItem({ text: $r('app.string.about') }) {
-                Toggle({ type: ToggleType.Switch, isOn: true })
-              }
+              SettingItem({ text: $r('app.string.about') })
+                .onClick(() => {
+                  this.pages.pushDestination({ name: Routers.ABOUT_PAGE })
+                })
 
               SettingItem({ text: '开发者工具' }) {
                 Button('打开', { buttonStyle: ButtonStyleMode.TEXTUAL })

@@ -25,6 +25,10 @@
       "pageSourceFile": "src/main/ets/pages/question/QuestionPage.ets",
       "buildFunction": "QuestionPageBuilder"
     },{
+      "name": "AboutPage",
+      "pageSourceFile": "src/main/ets/pages/about/AboutPage.ets",
+      "buildFunction": "AboutPageBuilder"
+    },{
       "name": "DeveloperToolsPage",
       "pageSourceFile": "src/main/ets/pages/devtools/DeveloperToolsPage.ets",
       "buildFunction": "DeveloperToolsPageBuilder"

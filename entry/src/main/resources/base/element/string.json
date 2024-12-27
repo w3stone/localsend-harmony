@@ -543,6 +543,22 @@
     {
       "name": "about",
       "value": "关于"
+    },
+    {
+      "name": "official_website",
+      "value": "官方网站："
+    },
+    {
+      "name": "about_text",
+      "value": "LocalSend 是一款免费的开源应用程序，可让您通过本地网络与附近的设备安全地分享文件和信息，而无需互联网连接。"
+    },
+    {
+      "name": "author",
+      "value": "作者"
+    },
+    {
+      "name": "open_source",
+      "value": "开源地址："
     }
   ]
 }
