@@ -129,9 +129,6 @@ export struct DeveloperToolsPage {
               }
 
               Blank().height(SizeConstant.SPACE_M)
-              Button('获取已接收文件列表').onClick(() => {
-                this.getFiles()
-              })
               Blank().height(SizeConstant.SPACE_M)
             }
 
@@ -256,7 +253,6 @@ export struct DeveloperToolsPage {
   }
 
   getCacheFiles() {
-    console.info(`cacheDir: ${getContext(this).cacheDir}\nfilesDir: ${getContext(this).filesDir}`)
     const dir: string = `${getContext(this).cacheDir}/pending_to_send`
     fs.access(dir, fs.AccessModeType.EXIST)
       .then((exist) => {

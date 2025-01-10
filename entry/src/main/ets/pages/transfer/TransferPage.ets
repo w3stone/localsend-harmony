@@ -309,8 +309,8 @@ export struct TransferPage {
           this.progress = action.progress
           this.percentage = Number.parseFloat((((this.totalProgress + action.progress) / this.total) * 100).toFixed(2))
         } else if (action.status == FileTransferStatus.COMPLETED) {
-          this.totalProgress += action.progress
           this.progress = 0
+          this.totalProgress += action.progress
         }
         if (action.speed > 0) {
           this.speed = action.speed

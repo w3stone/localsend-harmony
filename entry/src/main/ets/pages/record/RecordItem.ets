@@ -1,7 +1,10 @@
 import { DateUtil } from '@pura/harmony-utils'
+import { Errors, logger, toast } from 'common'
 import { SizeConstant } from 'common/src/main/ets/constant/SizeConstant'
+import { Wapper } from 'rdbplus/src/main/ets/Wapper'
 import { FileIcon, Icon, SingleLineText } from '../../components'
-import { ReceiveRecordModel } from '../../model'
+import { ReceivedRecordMapper } from '../../db'
+import { IMoveFile, ReceiveRecordModel, SimpleMoveFile } from '../../model'
 import { FileProvider } from '../../utils'
 import { FileMenu } from './FileMenu'
 
@@ -11,6 +14,7 @@ export struct RecordItem {
   @Prop index: number
   @State isLongPress: boolean = false
   onRemoveRecordClick?: (id: number) => void
+  onFileMoving?: (isMoving: boolean) => void
 
   @Builder
   BindMenus() {
@@ -35,6 +39,17 @@ export struct RecordItem {
       }
       .layoutWeight(1)
 
+      if (this.data.isSandbox()) {
+        SaveButton({ icon: SaveIconStyle.FULL_FILLED, buttonType: ButtonType.Circle })
+          .size({ width: SizeConstant.ICON_XL, height: SizeConstant.ICON_XL })
+          .onClick(async (_, result: SaveButtonOnClickResult) => {
+            if (result == SaveButtonOnClickResult.SUCCESS) {
+              this.doMoveReceiveFiles()
+            } else {
+              toast.show($r('app.string.file_move_to_download_error'))
+            }
+          })
+      }
       Icon({ src: $r('app.media.ic_more') })
         .bindMenu(this.BindMenus)
     }
@@ -50,5 +65,24 @@ export struct RecordItem {
 
   getFileInfo(): string {
     return `${DateUtil.getFormatDateStr(this.data.sendAt)} - ${FileProvider.formatBytes(this.data.size)} - ${this.data.sender}`
+  }
+
+  private async doMoveReceiveFiles() {
+    try {
+      this.onFileMoving?.(true)
+      const files: SimpleMoveFile[] = [new SimpleMoveFile(this.data.filePath)]
+      await FileProvider.moveFilesToDownload(getContext(this), files, (moved: IMoveFile) => {
+        this.data.filePath = moved.getFilepath()
+        //修改数据库该文件存放目录
+        new ReceivedRecordMapper().update(new Wapper().set('filePath', moved.getFilepath()).eq('id', this.data.id))
+        toast.show($r('app.string.file_move_complete'))
+        this.onFileMoving?.(false)
+      })
+    } catch (e) {
+      logger.warn('TransferPage', `移动文件出错: ${Errors.getErrorMessage(e)}`)
+      toast.show($r('app.string.file_move_failed'))
+    } finally {
+      // DialogHelper.closeLoading()
+    }
   }
 }

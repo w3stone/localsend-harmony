@@ -7,7 +7,8 @@ import { ObservedArray } from '../../utils'
 import { Errors, logger, Screens, toast } from 'common'
 import { Page, Wapper } from 'rdbplus'
 import { ReceivedRecordMapper } from '../../db/mapper/ReceiveRecordMapper'
-import { DialogAction, DialogHelper } from '@pura/harmony-dialog'
+import { DialogAction, DialogHelper, SpinKit, SpinType } from '@pura/harmony-dialog'
+import { common, Want } from '@kit.AbilityKit'
 
 @Builder
 export function ReceiveRecordPageBuilder() {
@@ -19,77 +20,111 @@ export struct ReceiveRecordPage {
   @State current: number = 1
   @State total: number = 0
   @State records: ObservedArray<ReceiveRecordModel> = []
+  @State isMovingFile: boolean = false
+  menus: Array<NavigationMenuItem> = [{
+    value: 'item1',
+    icon: 'resources/base/media/ic_public_more.svg',
+    action: () => {
+      toast.show('多选')
+    }
+  }]
 
   build() {
     NavDestination() {
-      NavigationTitle({ title: $r('app.string.history') }) {
-        List({ space: SizeConstant.SPACE_L }) {
-          ListItem() {
-            Row() {
-              IconButton({
-                icon: $r('app.media.ic_folder_filled'),
-                iconSize: SizeConstant.ICON_L,
-                text: $r('app.string.open_folder'),
-                textSize: SizeConstant.TEXT_L,
-                arrangement: FlexDirection.Row
-              })
-                .borderRadius(SizeConstant.RADIUS_L)
-                .backgroundColor($r('app.color.container'))
-                .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
-                .onClick(() => toast.show('暂不支持'))
-
-              Blank().width(SizeConstant.SPACE_XL)
-
-              IconButton({
-                icon: $r('app.media.ic_delete_filled'),
-                iconSize: SizeConstant.ICON_L,
-                text: $r('app.string.delete_record'),
-                textSize: SizeConstant.TEXT_L,
-                arrangement: FlexDirection.Row,
-                clickable: this.records.length !== 0
-              })
-                .borderRadius(SizeConstant.RADIUS_L)
-                .backgroundColor($r('app.color.container'))
-                .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
-                .enabled(this.records.length !== 0)
-                .onClick(() => this.onDeleteAllRecordClick())
-            }
-          }
-
-          if (this.total !== 0) {
-            ForEach(this.records, (item: ReceiveRecordModel, index: number) => {
-              ListItem() {
-                RecordItem({
-                  data: item, index: index, onRemoveRecordClick: (id: number) => {
-                    this.onRemoveRecordClick(index, id)
-                  }
-                })
-              }
-            }, (item: ReceivedFileModel, index: number) => `${item.id}_${index}`)
-          } else {
+      Stack() {
+        NavigationTitle({ title: $r('app.string.history'), /*menus: this.menus*/ }) {
+          List({ space: SizeConstant.SPACE_L }) {
             ListItem() {
-              Column() {
-                Blank().height(130)
+              Row() {
                 IconButton({
-                  icon: $r('app.media.ic_no_data'),
-                  iconSize: SizeConstant.ICON_XXL,
-                  text: $r('app.string.no_data'),
-                  textSize: SizeConstant.TEXT_XL,
-                  textColor: $r('app.color.on_container_secondary'),
-                  arrangement: FlexDirection.Column,
-                  space: SizeConstant.SPACE_L
+                  icon: $r('app.media.ic_folder_filled'),
+                  iconSize: SizeConstant.ICON_L,
+                  text: $r('app.string.open_folder'),
+                  textSize: SizeConstant.TEXT_L,
+                  arrangement: FlexDirection.Row
                 })
+                  .borderRadius(SizeConstant.RADIUS_L)
+                  .backgroundColor($r('app.color.container'))
+                  .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
+                  .onClick(() => {
+                    const context: common.UIAbilityContext = getContext(this) as common.UIAbilityContext;
+                    let want: Want = {
+                      bundleName: 'com.huawei.hmos.filemanager',
+                      abilityName: 'MainAbility'
+                    };
+                    context.startAbility(want);
+                  })
+
+                Blank().width(SizeConstant.SPACE_XL)
+
+                IconButton({
+                  icon: $r('app.media.ic_delete_filled'),
+                  iconSize: SizeConstant.ICON_L,
+                  text: $r('app.string.delete_record'),
+                  textSize: SizeConstant.TEXT_L,
+                  arrangement: FlexDirection.Row,
+                  clickable: this.records.length !== 0
+                })
+                  .borderRadius(SizeConstant.RADIUS_L)
+                  .backgroundColor($r('app.color.container'))
+                  .padding({ left: SizeConstant.SPACE_M, right: SizeConstant.SPACE_M })
+                  .enabled(this.records.length !== 0)
+                  .onClick(() => this.onDeleteAllRecordClick())
               }
-              .width('100%')
-              .alignItems(HorizontalAlign.Center)
             }
+
+            if (this.total !== 0) {
+              ForEach(this.records, (item: ReceiveRecordModel, index: number) => {
+                ListItem() {
+                  RecordItem({
+                    data: item,
+                    index: index,
+                    onRemoveRecordClick: (id: number) => {
+                      this.onRemoveRecordClick(index, id)
+                    },
+                    onFileMoving: (isMoving: boolean) => {
+                      this.isMovingFile = isMoving
+                    }
+                  })
+                }
+              }, (item: ReceivedFileModel, index: number) => `${item.id}_${index}`)
+            } else {
+              ListItem() {
+                Column() {
+                  Blank().height(130)
+                  IconButton({
+                    icon: $r('app.media.ic_no_data'),
+                    iconSize: SizeConstant.ICON_XXL,
+                    text: $r('app.string.no_data'),
+                    textSize: SizeConstant.TEXT_XL,
+                    textColor: $r('app.color.on_container_secondary'),
+                    arrangement: FlexDirection.Column,
+                    space: SizeConstant.SPACE_L
+                  })
+                }
+                .width('100%')
+                .alignItems(HorizontalAlign.Center)
+              }
+            }
+            ListItem().height(Screens.getNavigationBarHeight())
           }
-          ListItem().height(Screens.getNavigationBarHeight())
+          .width('100%')
+          .height('100%')
+          .padding(SizeConstant.SPACE_L)
+          .listDirection(Axis.Vertical)
         }
-        .width('100%')
-        .height('100%')
-        .padding(SizeConstant.SPACE_L)
-        .listDirection(Axis.Vertical)
+
+        if (this.isMovingFile) {
+          Stack()
+            .size({ width: '100%', height: '100%' })
+            .backgroundColor($r('app.color.mask_background'))
+          Column() {
+            SpinKit({ spinType: SpinType.spinZ, spinColor: $r('app.color.on_container') }).align(Alignment.Center)
+          }
+          .padding(SizeConstant.SPACE_L)
+          .borderRadius(SizeConstant.RADIUS_M)
+          .backgroundColor($r('app.color.container'))
+        }
       }
     }
     .hideTitleBar(true)

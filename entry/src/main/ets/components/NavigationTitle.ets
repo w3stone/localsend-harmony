@@ -6,6 +6,7 @@ export struct NavigationTitle {
   @State title: ResourceStr | undefined = undefined
   @State isHideBackButton: boolean = false
   @State titleBackgroundColor: ResourceColor = $r('app.color.background')
+  @State menus: Array<NavigationMenuItem> = []
 
   @Builder
   doNothingBuilder() {
@@ -43,6 +44,7 @@ export struct NavigationTitle {
     .padding({ top: Screens.getStatusBarHeight() })
     .backgroundColor(this.titleBackgroundColor)
     .mode(NavigationMode.Stack)
+    .menus(this.menus)
   }
 }
 
