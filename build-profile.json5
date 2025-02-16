@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "/Users/azdev/.ohos/config/default_localsend_g2VmwfB9UntyJPBGJyAG0IrJdOiEXy-Gb0OWf3WoZAs=.cer",
-          "storePassword": "0000001BFB4DF19219EFA8FDE1541E6924FE7191DF56596322B722A6702D87EF80B8137FBA0A6358EA4E2A",
+          "certpath": "/Users/w3stone/.ohos/config/default_localsend-harmony_9_PkqQfnIGCxYiC6ut_j0lB7hQWP3gGS895VXzprnas=.cer",
+          "storePassword": "0000001B38F9DBFE04CFA5C58F757BCAC970CF2C149D9A3FE849A9D657E67B18A6C690E91C90B39AB8D81E",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B7717D92BF4C94E2C47D4EDDEEE11D32D468780CD0D329CEAA0A8AAAAFE254E98115B0F0F3A14A7",
-          "profile": "/Users/azdev/.ohos/config/default_localsend_g2VmwfB9UntyJPBGJyAG0IrJdOiEXy-Gb0OWf3WoZAs=.p7b",
+          "keyPassword": "0000001B9CE6F28597701A3961A894EB49E8FFEA82D6410D6432EB5565F473CAF1998FA2E92A26EC3D89B8",
+          "profile": "/Users/w3stone/.ohos/config/default_localsend-harmony_9_PkqQfnIGCxYiC6ut_j0lB7hQWP3gGS895VXzprnas=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "/Users/azdev/.ohos/config/default_localsend_g2VmwfB9UntyJPBGJyAG0IrJdOiEXy-Gb0OWf3WoZAs=.p12"
+          "storeFile": "/Users/w3stone/.ohos/config/default_localsend-harmony_9_PkqQfnIGCxYiC6ut_j0lB7hQWP3gGS895VXzprnas=.p12"
         }
       }
     ],
@@ -19,7 +19,7 @@
       {
         "name": "default",
         "signingConfig": "default",
-        "compatibleSdkVersion": "5.0.1(13)",
+        "compatibleSdkVersion": "5.0.2(14)",
         "runtimeOS": "HarmonyOS",
         "buildOption": {
           "strictMode": {
